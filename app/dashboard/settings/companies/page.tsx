@@ -88,7 +88,7 @@ export default function CompaniesSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen p-8">
+    <div className="p-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-4">
           <BackButton href="/dashboard" />

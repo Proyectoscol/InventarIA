@@ -66,7 +66,7 @@ export default function SalePage() {
   }
 
   return (
-    <div className="min-h-screen p-8">
+    <div className="p-8">
       <div className="max-w-3xl mx-auto">
         <div className="mb-4">
           <BackButton href="/dashboard" />

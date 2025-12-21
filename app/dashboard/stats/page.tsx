@@ -55,11 +55,10 @@ export default function StatsPage() {
   }
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-4">
-          <BackButton href="/dashboard" />
-        </div>
+    <div className="p-8">
+      <div className="mb-4">
+        <BackButton href="/dashboard" />
+      </div>
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">Estadísticas y Reportes</h1>
 
@@ -119,8 +118,7 @@ export default function StatsPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
-      </div>
+        </div>
     </div>
   )
 }

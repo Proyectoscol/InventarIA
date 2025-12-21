@@ -45,20 +45,20 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="p-8">
         <h1 className="text-3xl font-bold mb-6">
           Bienvenido, {session.user?.name}
         </h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {/* Resumen rápido */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader>
-              <CardTitle>Compañías</CardTitle>
+              <CardTitle className="text-lg">Compañías</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{companies.length}</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-3xl font-bold text-primary">{companies.length}</p>
+              <p className="text-sm text-muted-foreground mt-1">
                 Compañías registradas
               </p>
             </CardContent>
@@ -66,34 +66,40 @@ export default function DashboardPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Acciones Rápidas</CardTitle>
+              <CardTitle className="text-lg">Acciones Rápidas</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <Link href="/dashboard/movements/sale" className="block">
-                <Button className="w-full">Nueva Venta</Button>
+                <Button className="w-full" size="sm">🛒 Nueva Venta</Button>
               </Link>
               <Link href="/dashboard/movements/purchase" className="block">
-                <Button variant="outline" className="w-full">Nueva Compra</Button>
+                <Button variant="outline" className="w-full" size="sm">📦 Nueva Compra</Button>
               </Link>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Navegación</CardTitle>
+              <CardTitle className="text-lg">Inventario</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <Link href="/dashboard/inventory" className="block">
-                <Button variant="outline" className="w-full">Inventario</Button>
+            <CardContent>
+              <Link href="/dashboard/inventory">
+                <Button variant="outline" className="w-full" size="sm">
+                  📋 Ver Inventario
+                </Button>
               </Link>
-              <Link href="/dashboard/stats" className="block">
-                <Button variant="outline" className="w-full">Estadísticas</Button>
-              </Link>
-              <Link href="/dashboard/settings/warehouses" className="block">
-                <Button variant="outline" className="w-full">Bodegas</Button>
-              </Link>
-              <Link href="/dashboard/settings/companies" className="block">
-                <Button variant="outline" className="w-full">Configuración</Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Reportes</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Link href="/dashboard/stats">
+                <Button variant="outline" className="w-full" size="sm">
+                  📊 Ver Estadísticas
+                </Button>
               </Link>
             </CardContent>
           </Card>
@@ -114,7 +120,6 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         )}
-      </div>
     </div>
   )
 }
