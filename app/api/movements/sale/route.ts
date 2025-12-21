@@ -1,0 +1,217 @@
+import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { sendStockAlert } from "@/lib/email"
+
+export async function POST(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
+    const data = await req.json()
+    
+    // 1. Validar stock disponible
+    const stock = await prisma.stock.findUnique({
+      where: {
+        productId_warehouseId: {
+          productId: data.productId,
+          warehouseId: data.warehouseId
+        }
+      }
+    })
+    
+    if (!stock || stock.quantity < data.quantity) {
+      return NextResponse.json(
+        { error: `Stock insuficiente. Disponible: ${stock?.quantity || 0}` },
+        { status: 400 }
+      )
+    }
+    
+    // 2. Obtener lotes FIFO
+    const batches = await prisma.batch.findMany({
+      where: {
+        productId: data.productId,
+        warehouseId: data.warehouseId,
+        remainingQty: { gt: 0 }
+      },
+      orderBy: { purchaseDate: "asc" }
+    })
+    
+    if (batches.length === 0) {
+      return NextResponse.json(
+        { error: "No hay lotes disponibles para este producto" },
+        { status: 400 }
+      )
+    }
+    
+    // 3. Aplicar FIFO y calcular costo
+    let remainingToSell = data.quantity
+    let totalCost = 0
+    const batchUpdates: Array<{ batchId: string; newRemaining: number }> = []
+    
+    for (const batch of batches) {
+      if (remainingToSell <= 0) break
+      
+      const qtyFromBatch = Math.min(batch.remainingQty, remainingToSell)
+      const costFromBatch = qtyFromBatch * Number(batch.unitCost)
+      
+      totalCost += costFromBatch
+      remainingToSell -= qtyFromBatch
+      
+      batchUpdates.push({
+        batchId: batch.id,
+        newRemaining: batch.remainingQty - qtyFromBatch
+      })
+    }
+    
+    const unitCost = totalCost / data.quantity
+    
+    // 4. Calcular ganancia
+    let profit = (data.unitPrice - unitCost) * data.quantity
+    
+    if (data.hasShipping && data.shippingPaidBy === "seller") {
+      profit -= data.shippingCost || 0
+    }
+    
+    // 5. Generar número de movimiento
+    const lastMovement = await prisma.movement.findFirst({
+      where: {
+        type: "sale",
+        movementNumber: { startsWith: "VEN-" }
+      },
+      orderBy: { movementNumber: "desc" }
+    })
+    
+    const lastNumber = lastMovement
+      ? parseInt(lastMovement.movementNumber.split("-")[1])
+      : 0
+    const movementNumber = `VEN-${String(lastNumber + 1).padStart(6, "0")}`
+    
+    // 6. Transacción: actualizar todo
+    const result = await prisma.$transaction(async (tx) => {
+      // Actualizar lotes
+      for (const update of batchUpdates) {
+        await tx.batch.update({
+          where: { id: update.batchId },
+          data: { remainingQty: update.newRemaining }
+        })
+      }
+      
+      // Crear movimiento
+      const movement = await tx.movement.create({
+        data: {
+          movementNumber,
+          type: "sale",
+          productId: data.productId,
+          warehouseId: data.warehouseId,
+          batchId: batchUpdates[0].batchId,
+          quantity: data.quantity,
+          unitPrice: data.unitPrice,
+          totalAmount: data.unitPrice * data.quantity,
+          unitCost,
+          profit,
+          paymentType: data.paymentType,
+          cashAmount: data.cashAmount,
+          creditAmount: data.creditAmount,
+          creditPaid: data.paymentType === "cash",
+          hasShipping: data.hasShipping || false,
+          shippingCost: data.shippingCost,
+          shippingPaidBy: data.shippingPaidBy,
+          customerId: data.customerId,
+          notes: data.notes
+        }
+      })
+      
+      // Actualizar stock
+      await tx.stock.update({
+        where: {
+          productId_warehouseId: {
+            productId: data.productId,
+            warehouseId: data.warehouseId
+          }
+        },
+        data: {
+          quantity: { decrement: data.quantity }
+        }
+      })
+      
+      return movement
+    })
+    
+    // 7. VERIFICAR Y ENVIAR ALERTA (fuera de transacción)
+    try {
+      await checkAndSendAlert({
+        productId: data.productId,
+        warehouseId: data.warehouseId,
+        companyId: data.companyId
+      })
+    } catch (alertError) {
+      console.error("Error enviando alerta:", alertError)
+      // No fallar la venta si falla el email
+    }
+    
+    return NextResponse.json(result, { status: 201 })
+  } catch (error: any) {
+    console.error("Error en venta:", error)
+    return NextResponse.json(
+      { error: error.message || "Error procesando venta" },
+      { status: 500 }
+    )
+  }
+}
+
+async function checkAndSendAlert({
+  productId,
+  warehouseId,
+  companyId
+}: {
+  productId: string
+  warehouseId: string
+  companyId: string
+}) {
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    include: {
+      stock: { where: { warehouseId } }
+    }
+  })
+  
+  if (!product) return
+  
+  const currentStock = product.stock[0]?.quantity || 0
+  
+  if (currentStock >= product.minStockThreshold) {
+    return
+  }
+  
+  const alertConfig = await prisma.alertConfig.findUnique({
+    where: { companyId }
+  })
+  
+  if (!alertConfig || !alertConfig.enableAlerts || alertConfig.alertEmails.length === 0) {
+    return
+  }
+  
+  const warehouse = await prisma.warehouse.findUnique({
+    where: { id: warehouseId }
+  })
+  
+  const lastBatch = await prisma.batch.findFirst({
+    where: { productId },
+    orderBy: { purchaseDate: "desc" }
+  })
+  
+  await sendStockAlert({
+    to: alertConfig.alertEmails,
+    productName: product.name,
+    warehouseName: warehouse?.name || "Desconocida",
+    currentStock,
+    threshold: product.minStockThreshold,
+    belowBy: product.minStockThreshold - currentStock,
+    lastUnitCost: Number(lastBatch?.unitCost || 0)
+  })
+}
+

@@ -1,0 +1,203 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============= AUTENTICACIÓN =============
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  passwordHash  String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  companies     UserCompany[]
+  
+  @@map("users")
+}
+
+// ============= COMPAÑÍAS =============
+model Company {
+  id            String    @id @default(cuid())
+  name          String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  users         UserCompany[]
+  warehouses    Warehouse[]
+  products      Product[]
+  customers     Customer[]
+  alertConfig   AlertConfig?
+  
+  @@map("companies")
+}
+
+model UserCompany {
+  id         String   @id @default(cuid())
+  userId     String
+  companyId  String
+  role       String   @default("admin") // admin, manager, employee
+  createdAt  DateTime @default(now())
+  
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, companyId])
+  @@map("user_companies")
+}
+
+// ============= CONFIGURACIÓN DE ALERTAS =============
+model AlertConfig {
+  id              String   @id @default(cuid())
+  companyId       String   @unique
+  alertEmails     String[] // Array de emails para recibir alertas
+  enableAlerts    Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  @@map("alert_configs")
+}
+
+// ============= BODEGAS =============
+model Warehouse {
+  id            String    @id @default(cuid())
+  name          String
+  companyId     String
+  description   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  company       Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  stock         Stock[]
+  movements     Movement[]
+  
+  @@map("warehouses")
+}
+
+// ============= PRODUCTOS =============
+model Product {
+  id                String    @id @default(cuid())
+  name              String    // Nombre original
+  nameLower         String    // Versión en lowercase para búsqueda única
+  description       String?
+  imageBase64       String?   @db.Text // Imagen comprimida en base64
+  companyId         String
+  minStockThreshold Int       @default(10) // Umbral mínimo para alertas
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  company           Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  stock             Stock[]
+  batches           Batch[]
+  movements         Movement[]
+  
+  @@unique([companyId, nameLower])
+  @@index([companyId, nameLower])
+  @@map("products")
+}
+
+// ============= STOCK POR BODEGA =============
+model Stock {
+  id           String    @id @default(cuid())
+  productId    String
+  warehouseId  String
+  quantity     Int       @default(0)
+  updatedAt    DateTime  @updatedAt
+  
+  product      Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouse    Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  
+  @@unique([productId, warehouseId])
+  @@map("stock")
+}
+
+// ============= LOTES DE COMPRA (FIFO) =============
+model Batch {
+  id               String    @id @default(cuid())
+  batchNumber      String    @unique // Número único de lote
+  productId        String
+  warehouseId      String
+  initialQuantity  Int       // Cantidad inicial del lote
+  remainingQty     Int       // Cantidad restante en el lote
+  unitCost         Decimal   @db.Decimal(15, 2) // Costo unitario en COP
+  purchaseDate     DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+  
+  product          Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  movements        Movement[]
+  
+  @@index([productId, warehouseId, remainingQty])
+  @@map("batches")
+}
+
+// ============= CLIENTES =============
+model Customer {
+  id            String    @id @default(cuid())
+  name          String
+  email         String?
+  phone         String?
+  address       String?
+  companyId     String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  company       Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  movements     Movement[]
+  
+  @@map("customers")
+}
+
+// ============= MOVIMIENTOS (INGRESOS/EGRESOS) =============
+model Movement {
+  id                String    @id @default(cuid())
+  movementNumber    String    @unique // Formato: ING-000001, VEN-000001
+  type              String    // 'purchase' (ingreso) o 'sale' (egreso)
+  productId         String
+  warehouseId       String
+  batchId           String?   // Para egresos: de qué lote se vendió
+  quantity          Int
+  unitPrice         Decimal   @db.Decimal(15, 2) // Precio unitario
+  totalAmount       Decimal   @db.Decimal(15, 2) // Total de la transacción
+  
+  // Información de pago
+  paymentType       String    // 'cash', 'credit', 'mixed'
+  cashAmount        Decimal?  @db.Decimal(15, 2) // Monto pagado en efectivo
+  creditAmount      Decimal?  @db.Decimal(15, 2) // Monto a crédito
+  creditPaid        Boolean   @default(false) // Si el crédito ya fue pagado
+  
+  // Envío
+  hasShipping       Boolean   @default(false)
+  shippingCost      Decimal?  @db.Decimal(15, 2)
+  shippingPaidBy    String?   // 'seller', 'customer'
+  
+  // Cliente (opcional)
+  customerId        String?
+  
+  // Utilidad (solo para ventas)
+  unitCost          Decimal?  @db.Decimal(15, 2) // Costo unitario al momento de venta
+  profit            Decimal?  @db.Decimal(15, 2) // Ganancia = (unitPrice - unitCost) * quantity - shipping
+  
+  notes             String?
+  movementDate      DateTime  @default(now())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  product           Product   @relation(fields: [productId], references: [id])
+  warehouse         Warehouse @relation(fields: [warehouseId], references: [id])
+  batch             Batch?    @relation(fields: [batchId], references: [id])
+  customer          Customer? @relation(fields: [customerId], references: [id])
+  
+  @@index([productId, warehouseId, movementDate])
+  @@index([type, movementDate])
+  @@map("movements")
+}
+

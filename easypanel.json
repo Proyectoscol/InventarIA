@@ -1,0 +1,49 @@
+{
+  "name": "inventaria",
+  "description": "Sistema de Gestión de Inventario Multi-Compañía",
+  "version": "1.0.0",
+  "services": [
+    {
+      "name": "inventaria-app",
+      "image": "node:20-alpine",
+      "build": {
+        "context": ".",
+        "dockerfile": "Dockerfile"
+      },
+      "ports": [
+        {
+          "container": 3000,
+          "host": 3000
+        }
+      },
+      "environment": [
+        "DATABASE_URL",
+        "NEXTAUTH_SECRET",
+        "NEXTAUTH_URL",
+        "SMTP_ADMIN_EMAIL",
+        "SMTP_HOST",
+        "SMTP_PORT",
+        "SMTP_USER",
+        "SMTP_PASS",
+        "SMTP_SENDER_NAME",
+        "NODE_ENV=production"
+      ],
+      "volumes": [],
+      "restart": "always",
+      "healthcheck": {
+        "test": ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"],
+        "interval": "30s",
+        "timeout": "10s",
+        "retries": "3"
+      }
+    }
+  ],
+  "databases": [
+    {
+      "name": "inventaria-db",
+      "type": "postgres",
+      "version": "15"
+    }
+  ]
+}
+
