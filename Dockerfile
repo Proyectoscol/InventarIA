@@ -9,9 +9,11 @@ WORKDIR /app
 
 # Copiar archivos de dependencias
 COPY package.json package-lock.json* ./
-RUN npm ci --legacy-peer-deps
 
-# Generar Prisma Client
+# Instalar dependencias (sin ejecutar postinstall aún)
+RUN npm ci --legacy-peer-deps --ignore-scripts
+
+# Copiar schema de Prisma y generar cliente
 COPY prisma ./prisma
 RUN npx prisma generate
 
