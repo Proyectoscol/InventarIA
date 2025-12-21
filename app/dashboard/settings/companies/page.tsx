@@ -57,15 +57,25 @@ export default function CompaniesSettingsPage() {
       const data = await res.json()
 
       if (res.ok) {
+        toast.success("✅ Compañía creada exitosamente", {
+          description: "La compañía se ha agregado correctamente",
+          duration: 3000
+        })
         setNewCompanyName("")
         fetchCompanies()
       } else {
         console.error("Error del servidor:", data)
-        alert(`Error: ${data.error || "No se pudo crear la compañía"}`)
+        toast.error("❌ Error al crear compañía", {
+          description: data.error || "Por favor, intenta nuevamente",
+          duration: 4000
+        })
       }
     } catch (error: any) {
       console.error("Error creando compañía:", error)
-      alert(`Error: ${error.message || "Error al crear la compañía"}`)
+      toast.error("❌ Error al crear compañía", {
+        description: error.message || "Por favor, intenta nuevamente",
+        duration: 4000
+      })
     }
   }
 

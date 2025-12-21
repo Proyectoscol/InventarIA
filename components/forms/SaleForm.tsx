@@ -283,7 +283,14 @@ export function SaleForm({ companyId, warehouses, customers = [], onSuccess }: S
           Cancelar
         </Button>
         <Button type="submit" disabled={loading} className="flex-1">
-          {loading ? "Guardando..." : "💾 Registrar Venta"}
+          {loading ? (
+            <>
+              <span className="animate-spin mr-2">⏳</span>
+              Registrando...
+            </>
+          ) : (
+            "✅ Registrar Venta"
+          )}
         </Button>
       </div>
     </form>

@@ -233,7 +233,14 @@ export function PurchaseForm({ companyId, warehouses, onSuccess, onCancel }: Pur
           </Button>
         )}
         <Button type="submit" disabled={loading} className="flex-1">
-          {loading ? "Guardando..." : "💾 Registrar Compra"}
+          {loading ? (
+            <>
+              <span className="animate-spin mr-2">⏳</span>
+              Registrando...
+            </>
+          ) : (
+            "✅ Registrar Compra"
+          )}
         </Button>
       </div>
     </form>
