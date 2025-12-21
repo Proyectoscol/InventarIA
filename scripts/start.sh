@@ -138,7 +138,7 @@ else
     
     # Esperar y verificar nuevamente
     sleep 3
-    echo "   Verificando nuevamente después de force-reset..."
+    echo "   Verificando nuevamente después de db push..."
     
     PULL_OUTPUT=$(DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db pull --print 2>&1 | head -100)
     
