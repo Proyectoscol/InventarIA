@@ -89,6 +89,12 @@ export default function DashboardPage() {
               <Link href="/dashboard/stats" className="block">
                 <Button variant="outline" className="w-full">Estadísticas</Button>
               </Link>
+              <Link href="/dashboard/settings/warehouses" className="block">
+                <Button variant="outline" className="w-full">Bodegas</Button>
+              </Link>
+              <Link href="/dashboard/settings/companies" className="block">
+                <Button variant="outline" className="w-full">Configuración</Button>
+              </Link>
             </CardContent>
           </Card>
         </div>
