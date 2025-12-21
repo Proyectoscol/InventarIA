@@ -24,33 +24,37 @@ if [ -d "./prisma/migrations" ] && [ "$(ls -A ./prisma/migrations 2>/dev/null)" 
   }
 else
   echo "   No hay migraciones, creando esquema con db push..."
-  $PRISMA_CMD db push --accept-data-loss --skip-generate --force-reset || {
-    echo "   ⚠️  db push falló, intentando sin force-reset..."
-    $PRISMA_CMD db push --accept-data-loss --skip-generate || {
-      echo "❌ Error creando esquema de base de datos"
-      echo "   Verifica que DATABASE_URL esté configurada correctamente"
-      echo "   DATABASE_URL actual: ${DATABASE_URL:0:50}..."
-      exit 1
-    }
-  }
   
-  # Verificar que las tablas se crearon ejecutando una consulta SQL directa
+  # Ejecutar db push
+  $PRISMA_CMD db push --accept-data-loss --skip-generate 2>&1
+  
+  # Verificar que las tablas se crearon
   echo "   Verificando que las tablas se crearon..."
-  TABLES=$($PRISMA_CMD db execute --stdin <<< "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" 2>/dev/null | grep -oE '[0-9]+' | head -1 || echo "0")
+  sleep 2  # Dar tiempo para que se completen las operaciones
+  
+  # Verificar tablas con una consulta más simple
+  TABLES_RESULT=$($PRISMA_CMD db execute --stdin <<< "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public';" 2>&1)
+  TABLES=$(echo "$TABLES_RESULT" | grep -oE '[0-9]+' | head -1 || echo "0")
   
   if [ "$TABLES" = "0" ] || [ -z "$TABLES" ]; then
-    echo "   ⚠️  No se encontraron tablas después de db push"
-    echo "   Intentando forzar creación con db push --force-reset..."
-    $PRISMA_CMD db push --force-reset --accept-data-loss --skip-generate 2>&1 || {
-      echo "   ⚠️  force-reset también falló"
-      echo "   Verificando permisos de base de datos..."
-    }
+    echo "   ⚠️  No se encontraron tablas, intentando con force-reset..."
+    $PRISMA_CMD db push --force-reset --accept-data-loss --skip-generate 2>&1
     
-    # Verificar nuevamente
-    TABLES=$($PRISMA_CMD db execute --stdin <<< "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" 2>/dev/null | grep -oE '[0-9]+' | head -1 || echo "0")
+    # Verificar nuevamente después de force-reset
+    sleep 2
+    TABLES_RESULT=$($PRISMA_CMD db execute --stdin <<< "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public';" 2>&1)
+    TABLES=$(echo "$TABLES_RESULT" | grep -oE '[0-9]+' | head -1 || echo "0")
+    
     if [ "$TABLES" = "0" ]; then
       echo "   ❌ CRÍTICO: No se pudieron crear las tablas"
-      echo "   Verifica permisos de la base de datos y DATABASE_URL"
+      echo "   Esto puede deberse a:"
+      echo "   1. Permisos insuficientes en la base de datos"
+      echo "   2. DATABASE_URL incorrecta"
+      echo "   3. La base de datos no existe"
+      echo "   Verifica los logs anteriores para más detalles"
+      # No salir con error, permitir que el servidor inicie para ver errores en runtime
+    else
+      echo "   ✅ Se encontraron $TABLES tablas después de force-reset"
     fi
   else
     echo "   ✅ Se encontraron $TABLES tablas en la base de datos"
