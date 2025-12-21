@@ -3,27 +3,25 @@ set -e
 
 echo "🚀 Iniciando aplicación InventarIA..."
 
-# Ejecutar migraciones
-echo "🔄 Ejecutando migraciones de Prisma..."
+# Ejecutar migraciones o crear esquema
+echo "🔄 Configurando base de datos de Prisma..."
 # Usar Prisma desde node_modules (versión correcta)
 if [ -f "./node_modules/.bin/prisma" ]; then
-  ./node_modules/.bin/prisma migrate deploy || {
-    echo "⚠️  migrate deploy falló, intentando db push..."
-    ./node_modules/.bin/prisma db push --accept-data-loss || {
-      echo "❌ Error ejecutando migraciones"
-      exit 1
-    }
-  }
+  PRISMA_CMD="./node_modules/.bin/prisma"
 else
-  # Si no está disponible, usar npx con la versión específica del package.json
-  npx -y prisma@5.19.0 migrate deploy || {
-    echo "⚠️  migrate deploy falló, intentando db push..."
-    npx -y prisma@5.19.0 db push --accept-data-loss || {
-      echo "❌ Error ejecutando migraciones"
-      exit 1
-    }
-  }
+  PRISMA_CMD="npx -y prisma@5.19.0"
 fi
+
+# Intentar migraciones primero
+echo "   Intentando migraciones..."
+$PRISMA_CMD migrate deploy 2>/dev/null || {
+  echo "   No hay migraciones, creando esquema con db push..."
+  $PRISMA_CMD db push --accept-data-loss --skip-generate || {
+    echo "❌ Error creando esquema de base de datos"
+    exit 1
+  }
+  echo "   ✅ Esquema creado exitosamente"
+}
 
 echo "✅ Base de datos lista"
 
