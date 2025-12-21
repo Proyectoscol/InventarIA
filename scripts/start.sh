@@ -38,12 +38,14 @@ else
   
   # Intentar listar tablas usando una query que Prisma pueda ejecutar
   # Usar db pull para ver qué hay en la base de datos
-  PULL_OUTPUT=$($PRISMA_CMD db pull --print 2>&1 | head -20)
+  PULL_OUTPUT=$($PRISMA_CMD db pull --print 2>&1 | head -50)
   
   # Si db pull encuentra tablas, las mostrará en el schema
   if echo "$PULL_OUTPUT" | grep -q "model"; then
-    TABLES=$(echo "$PULL_OUTPUT" | grep -c "model" || echo "0")
+    TABLES=$(echo "$PULL_OUTPUT" | grep -c "^model " || echo "0")
     echo "   Encontradas $TABLES tablas usando db pull"
+    echo "   Tablas encontradas:"
+    echo "$PULL_OUTPUT" | grep "^model " | sed 's/^model /     - /' || true
   else
     TABLES="0"
     echo "   No se encontraron tablas (db pull no encontró modelos)"
@@ -68,11 +70,13 @@ else
     sleep 3
     echo "   Verificando nuevamente después de force-reset..."
     
-    PULL_OUTPUT=$($PRISMA_CMD db pull --print 2>&1 | head -20)
+    PULL_OUTPUT=$($PRISMA_CMD db pull --print 2>&1 | head -50)
     
     if echo "$PULL_OUTPUT" | grep -q "model"; then
-      TABLES=$(echo "$PULL_OUTPUT" | grep -c "model" || echo "0")
+      TABLES=$(echo "$PULL_OUTPUT" | grep -c "^model " || echo "0")
       echo "   Después de force-reset: $TABLES tablas encontradas"
+      echo "   Tablas encontradas:"
+      echo "$PULL_OUTPUT" | grep "^model " | sed 's/^model /     - /' || true
     else
       TABLES="0"
       echo "   Después de force-reset: 0 tablas encontradas"
