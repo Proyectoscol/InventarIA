@@ -6,16 +6,29 @@ echo "🚀 Iniciando aplicación InventarIA..."
 # Construir DATABASE_URL si Easypanel proporciona variables separadas
 # Esto DEBE hacerse antes de ejecutar cualquier comando de Prisma
 echo "   Verificando configuración de base de datos..."
+echo "   Variables de entorno disponibles:"
+echo "     DATABASE_URL: ${DATABASE_URL:+definida (oculta)}"
+echo "     POSTGRES_HOST: ${POSTGRES_HOST:-no definida}"
+echo "     POSTGRES_USERNAME: ${POSTGRES_USERNAME:-no definida}"
+echo "     POSTGRES_DATABASE: ${POSTGRES_DATABASE:-no definida}"
+echo "     POSTGRES_PORT: ${POSTGRES_PORT:-no definida}"
+
 if [ -z "$DATABASE_URL" ] && [ -n "$POSTGRES_HOST" ]; then
+  if [ -z "$POSTGRES_PASSWORD" ]; then
+    echo "   ❌ ERROR: POSTGRES_PASSWORD no está definida"
+    exit 1
+  fi
+  if [ -z "$POSTGRES_DATABASE" ]; then
+    echo "   ❌ ERROR: POSTGRES_DATABASE no está definida"
+    exit 1
+  fi
   DATABASE_URL="postgres://${POSTGRES_USERNAME:-postgres}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DATABASE}?sslmode=disable"
   export DATABASE_URL
   echo "   ✅ Construida DATABASE_URL desde variables separadas de Easypanel"
+  echo "   DATABASE_URL: postgres://${POSTGRES_USERNAME:-postgres}:***@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DATABASE}?sslmode=disable"
 elif [ -z "$DATABASE_URL" ]; then
   echo "   ❌ ERROR: DATABASE_URL no está definida"
   echo "   Configura DATABASE_URL o las variables POSTGRES_* en Easypanel"
-  echo "   Variables disponibles:"
-  echo "     POSTGRES_HOST: ${POSTGRES_HOST:-no definida}"
-  echo "     POSTGRES_DATABASE: ${POSTGRES_DATABASE:-no definida}"
   exit 1
 else
   echo "   ✅ DATABASE_URL ya está configurada"
@@ -27,8 +40,18 @@ if [ -z "$DATABASE_URL" ]; then
   exit 1
 fi
 
+# Asegurar que DATABASE_URL esté exportada y disponible para todos los subprocesos
+export DATABASE_URL
+echo "   ✅ DATABASE_URL exportada correctamente"
+
 # Ejecutar migraciones o crear esquema
 echo "🔄 Configurando base de datos de Prisma..."
+# Verificar una vez más que DATABASE_URL esté disponible
+if [ -z "$DATABASE_URL" ]; then
+  echo "   ❌ CRÍTICO: DATABASE_URL no está disponible antes de ejecutar Prisma"
+  exit 1
+fi
+
 # Usar Prisma desde node_modules (versión correcta)
 if [ -f "./node_modules/.bin/prisma" ]; then
   PRISMA_CMD="./node_modules/.bin/prisma"
@@ -39,9 +62,9 @@ fi
 # Intentar migraciones primero (solo si existen)
 if [ -d "./prisma/migrations" ] && [ "$(ls -A ./prisma/migrations 2>/dev/null)" ]; then
   echo "   Aplicando migraciones existentes..."
-  $PRISMA_CMD migrate deploy || {
+  DATABASE_URL="$DATABASE_URL" $PRISMA_CMD migrate deploy || {
     echo "   ⚠️  Error aplicando migraciones, intentando db push..."
-    $PRISMA_CMD db push --accept-data-loss --skip-generate || {
+    DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db push --accept-data-loss --skip-generate || {
       echo "❌ Error configurando base de datos"
       exit 1
     }
@@ -49,8 +72,8 @@ if [ -d "./prisma/migrations" ] && [ "$(ls -A ./prisma/migrations 2>/dev/null)" 
 else
   echo "   No hay migraciones, creando esquema con db push..."
   
-  # Ejecutar db push
-  $PRISMA_CMD db push --accept-data-loss --skip-generate 2>&1
+  # Ejecutar db push con DATABASE_URL explícitamente
+  DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db push --accept-data-loss --skip-generate 2>&1
   
   # Verificar que las tablas se crearon
   echo "   Verificando que las tablas se crearon..."
@@ -62,7 +85,7 @@ else
   
   # Intentar listar tablas usando una query que Prisma pueda ejecutar
   # Usar db pull para ver qué hay en la base de datos
-  PULL_OUTPUT=$($PRISMA_CMD db pull --print 2>&1 | head -50)
+  PULL_OUTPUT=$(DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db pull --print 2>&1 | head -50)
   
   # Si db pull encuentra tablas, las mostrará en el schema
   if echo "$PULL_OUTPUT" | grep -q "model"; then
@@ -88,13 +111,13 @@ else
   if [ "$TABLES" = "0" ] || [ "$USER_EXISTS" = "0" ]; then
     echo "   ❌ No se encontraron tablas (encontradas: $TABLES, User: $USER_EXISTS)"
     echo "   Forzando creación con db push --force-reset..."
-    $PRISMA_CMD db push --force-reset --accept-data-loss --skip-generate 2>&1
+    DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db push --force-reset --accept-data-loss --skip-generate 2>&1
     
     # Esperar y verificar nuevamente
     sleep 3
     echo "   Verificando nuevamente después de force-reset..."
     
-    PULL_OUTPUT=$($PRISMA_CMD db pull --print 2>&1 | head -50)
+    PULL_OUTPUT=$(DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db pull --print 2>&1 | head -50)
     
     if echo "$PULL_OUTPUT" | grep -q "model"; then
       TABLES=$(echo "$PULL_OUTPUT" | grep -c "^model " || echo "0")
