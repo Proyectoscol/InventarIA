@@ -97,8 +97,6 @@ else
       echo "   Continuando para que puedas ver los errores en runtime..."
     else
       echo "   ✅ Tablas creadas exitosamente: $TABLES tablas, User existe"
-    else
-      echo "   ✅ Verificación exitosa después de force-reset: $TABLES tablas, User existe"
     fi
   else
     echo "   ✅ Verificación exitosa: $TABLES tablas encontradas, User existe"
