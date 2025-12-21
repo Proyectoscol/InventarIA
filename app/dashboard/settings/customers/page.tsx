@@ -162,12 +162,14 @@ export default function CustomersPage() {
               <CustomerForm
                 companyId={selectedCompanyId}
                 onSuccess={(newCustomer) => {
-                  setCustomers([...customers, newCustomer])
-                  setShowCreateCustomer(false)
-                  toast.success("✅ Cliente creado exitosamente", {
-                    description: "El cliente se ha agregado correctamente",
-                    duration: 3000
-                  })
+                  if (newCustomer) {
+                    setCustomers([...customers, newCustomer])
+                    setShowCreateCustomer(false)
+                    toast.success("✅ Cliente creado exitosamente", {
+                      description: "El cliente se ha agregado correctamente",
+                      duration: 3000
+                    })
+                  }
                 }}
                 onCancel={() => setShowCreateCustomer(false)}
               />
