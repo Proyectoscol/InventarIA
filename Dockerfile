@@ -13,9 +13,10 @@ COPY prisma ./prisma
 # Copiar archivos de dependencias
 COPY package.json package-lock.json* ./
 
-# Construir DATABASE_URL si Easypanel proporciona variables separadas (antes de npm ci)
-# Esto asegura que Prisma pueda acceder a DATABASE_URL durante postinstall
-# Nota: Las variables de entorno de build están disponibles aquí
+# Instalar dependencias
+# Durante el build, usamos una URL dummy para que Prisma pueda generar el cliente
+# La URL real se construirá en runtime desde las variables de Easypanel
+ENV DATABASE_URL=postgres://postgres:password@localhost:5432/dummy?sslmode=disable
 RUN npm ci --legacy-peer-deps
 
 # Rebuild the source code only when needed
