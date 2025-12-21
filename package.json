@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate",
+    "postinstall": "node -e \"if (!process.env.DATABASE_URL && process.env.POSTGRES_HOST) { process.env.DATABASE_URL = \\\"postgres://\\\" + (process.env.POSTGRES_USERNAME || 'postgres') + \\\":\\\" + process.env.POSTGRES_PASSWORD + \\\"@\\\" + process.env.POSTGRES_HOST + \\\":\\\" + (process.env.POSTGRES_PORT || '5432') + \\\"/\\\" + process.env.POSTGRES_DATABASE + \\\"?sslmode=disable\\\"; }\" && prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
