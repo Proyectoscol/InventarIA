@@ -81,6 +81,7 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="tu@email.com"
+                autoComplete="email"
               />
             </div>
 
@@ -94,6 +95,7 @@ export default function RegisterPage() {
                 required
                 minLength={6}
                 placeholder="Mínimo 6 caracteres"
+                autoComplete="new-password"
               />
             </div>
 
