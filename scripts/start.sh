@@ -40,12 +40,18 @@ else
   
   if [ "$TABLES" = "0" ] || [ -z "$TABLES" ]; then
     echo "   ⚠️  No se encontraron tablas después de db push"
-    echo "   Intentando crear esquema con migraciones iniciales..."
-    # Crear una migración inicial
-    $PRISMA_CMD migrate dev --name init --create-only 2>/dev/null || true
-    $PRISMA_CMD migrate deploy 2>/dev/null || {
-      echo "   ⚠️  Migraciones también fallaron, pero continuando..."
+    echo "   Intentando forzar creación con db push --force-reset..."
+    $PRISMA_CMD db push --force-reset --accept-data-loss --skip-generate 2>&1 || {
+      echo "   ⚠️  force-reset también falló"
+      echo "   Verificando permisos de base de datos..."
     }
+    
+    # Verificar nuevamente
+    TABLES=$($PRISMA_CMD db execute --stdin <<< "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" 2>/dev/null | grep -oE '[0-9]+' | head -1 || echo "0")
+    if [ "$TABLES" = "0" ]; then
+      echo "   ❌ CRÍTICO: No se pudieron crear las tablas"
+      echo "   Verifica permisos de la base de datos y DATABASE_URL"
+    fi
   else
     echo "   ✅ Se encontraron $TABLES tablas en la base de datos"
   fi
