@@ -40,16 +40,23 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session) {
+    if (!session || !session.user?.id) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
     const data = await req.json()
+    
+    if (!data.name || typeof data.name !== "string" || data.name.trim().length === 0) {
+      return NextResponse.json(
+        { error: "El nombre de la compañía es requerido" },
+        { status: 400 }
+      )
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       const company = await tx.company.create({
         data: {
-          name: data.name
+          name: data.name.trim()
         }
       })
 
@@ -64,7 +71,7 @@ export async function POST(req: NextRequest) {
       await tx.alertConfig.create({
         data: {
           companyId: company.id,
-          alertEmails: data.alertEmails || [],
+          alertEmails: Array.isArray(data.alertEmails) ? data.alertEmails : [],
           enableAlerts: data.enableAlerts !== false
         }
       })
@@ -74,8 +81,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result, { status: 201 })
   } catch (error: any) {
+    console.error("Error creando compañía:", error)
     return NextResponse.json(
-      { error: error.message },
+      { error: error.message || "Error al crear la compañía" },
       { status: 500 }
     )
   }

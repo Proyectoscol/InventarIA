@@ -49,19 +49,21 @@ export default function CompaniesSettingsPage() {
       const res = await fetch("/api/companies", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newCompanyName })
+        body: JSON.stringify({ name: newCompanyName.trim() })
       })
+
+      const data = await res.json()
 
       if (res.ok) {
         setNewCompanyName("")
         fetchCompanies()
       } else {
-        const error = await res.json()
-        alert(`Error: ${error.error || "No se pudo crear la compañía"}`)
+        console.error("Error del servidor:", data)
+        alert(`Error: ${data.error || "No se pudo crear la compañía"}`)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creando compañía:", error)
-      alert("Error al crear la compañía")
+      alert(`Error: ${error.message || "Error al crear la compañía"}`)
     }
   }
 
