@@ -32,16 +32,26 @@ else
   echo "   Verificando que las tablas se crearon..."
   sleep 2  # Dar tiempo para que se completen las operaciones
   
-  # Verificar tablas con una consulta más precisa
-  # Contar todas las tablas BASE TABLE en public
-  TABLES_RESULT=$(echo "SELECT COUNT(*)::text FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" | $PRISMA_CMD db execute --stdin 2>&1)
+  # Verificar tablas usando una query más simple que devuelva solo el número
+  TABLES_RESULT=$(echo "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" | $PRISMA_CMD db execute --stdin 2>&1)
   
-  # Extraer el número real de la salida (buscar el número después de cualquier texto)
-  TABLES=$(echo "$TABLES_RESULT" | grep -oE '\b[0-9]+\b' | tail -1 || echo "0")
+  # Debug: mostrar resultado completo
+  echo "   Debug - Resultado completo de COUNT: $TABLES_RESULT"
+  
+  # Extraer el número - buscar cualquier número en la salida
+  TABLES=$(echo "$TABLES_RESULT" | tr -d ' ' | grep -oE '[0-9]+' | head -1)
+  if [ -z "$TABLES" ]; then
+    TABLES="0"
+  fi
   
   # Verificar específicamente si User existe
-  USER_CHECK=$(echo "SELECT COUNT(*)::text FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'User';" | $PRISMA_CMD db execute --stdin 2>&1)
-  USER_COUNT=$(echo "$USER_CHECK" | grep -oE '\b[0-9]+\b' | tail -1 || echo "0")
+  USER_CHECK=$(echo "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'User';" | $PRISMA_CMD db execute --stdin 2>&1)
+  echo "   Debug - Resultado completo de User check: $USER_CHECK"
+  
+  USER_COUNT=$(echo "$USER_CHECK" | tr -d ' ' | grep -oE '[0-9]+' | head -1)
+  if [ -z "$USER_COUNT" ]; then
+    USER_COUNT="0"
+  fi
   
   echo "   Resultado verificación: $TABLES tablas encontradas"
   echo "   Tabla User count: $USER_COUNT"
@@ -56,10 +66,21 @@ else
     sleep 3
     echo "   Verificando nuevamente después de force-reset..."
     
-    TABLES_RESULT=$(echo "SELECT COUNT(*)::text FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" | $PRISMA_CMD db execute --stdin 2>&1)
-    TABLES=$(echo "$TABLES_RESULT" | grep -oE '\b[0-9]+\b' | tail -1 || echo "0")
-    USER_CHECK=$(echo "SELECT COUNT(*)::text FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'User';" | $PRISMA_CMD db execute --stdin 2>&1)
-    USER_COUNT=$(echo "$USER_CHECK" | grep -oE '\b[0-9]+\b' | tail -1 || echo "0")
+    TABLES_RESULT=$(echo "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" | $PRISMA_CMD db execute --stdin 2>&1)
+    echo "   Debug - Resultado COUNT después de force-reset: $TABLES_RESULT"
+    
+    TABLES=$(echo "$TABLES_RESULT" | tr -d ' ' | grep -oE '[0-9]+' | head -1)
+    if [ -z "$TABLES" ]; then
+      TABLES="0"
+    fi
+    
+    USER_CHECK=$(echo "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'User';" | $PRISMA_CMD db execute --stdin 2>&1)
+    echo "   Debug - Resultado User check después de force-reset: $USER_CHECK"
+    
+    USER_COUNT=$(echo "$USER_CHECK" | tr -d ' ' | grep -oE '[0-9]+' | head -1)
+    if [ -z "$USER_COUNT" ]; then
+      USER_COUNT="0"
+    fi
     
     echo "   Después de force-reset: $TABLES tablas, User: $USER_COUNT"
     
