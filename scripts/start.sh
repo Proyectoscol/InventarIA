@@ -32,33 +32,35 @@ else
   echo "   Verificando que las tablas se crearon..."
   sleep 2  # Dar tiempo para que se completen las operaciones
   
-  # Verificar tablas usando una query más simple que devuelva solo el número
-  TABLES_RESULT=$(echo "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" | $PRISMA_CMD db execute --stdin 2>&1)
+  # Verificar tablas usando Prisma Studio o una query directa
+  # Como db execute no devuelve resultados, usamos db pull para verificar
+  echo "   Verificando tablas usando método alternativo..."
   
-  # Debug: mostrar resultado completo
-  echo "   Debug - Resultado completo de COUNT: $TABLES_RESULT"
+  # Intentar listar tablas usando una query que Prisma pueda ejecutar
+  # Usar db pull para ver qué hay en la base de datos
+  PULL_OUTPUT=$($PRISMA_CMD db pull --print 2>&1 | head -20)
   
-  # Extraer el número - buscar cualquier número en la salida
-  TABLES=$(echo "$TABLES_RESULT" | tr -d ' ' | grep -oE '[0-9]+' | head -1)
-  if [ -z "$TABLES" ]; then
+  # Si db pull encuentra tablas, las mostrará en el schema
+  if echo "$PULL_OUTPUT" | grep -q "model"; then
+    TABLES=$(echo "$PULL_OUTPUT" | grep -c "model" || echo "0")
+    echo "   Encontradas $TABLES tablas usando db pull"
+  else
     TABLES="0"
+    echo "   No se encontraron tablas (db pull no encontró modelos)"
   fi
   
-  # Verificar específicamente si User existe
-  USER_CHECK=$(echo "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'User';" | $PRISMA_CMD db execute --stdin 2>&1)
-  echo "   Debug - Resultado completo de User check: $USER_CHECK"
-  
-  USER_COUNT=$(echo "$USER_CHECK" | tr -d ' ' | grep -oE '[0-9]+' | head -1)
-  if [ -z "$USER_COUNT" ]; then
-    USER_COUNT="0"
+  # Verificar específicamente User
+  if echo "$PULL_OUTPUT" | grep -q "model User"; then
+    USER_EXISTS="1"
+    echo "   Tabla User encontrada"
+  else
+    USER_EXISTS="0"
+    echo "   Tabla User NO encontrada"
   fi
-  
-  echo "   Resultado verificación: $TABLES tablas encontradas"
-  echo "   Tabla User count: $USER_COUNT"
   
   # Verificar realmente si las tablas existen
-  if [ "$TABLES" = "0" ] || [ "$USER_COUNT" = "0" ]; then
-    echo "   ❌ No se encontraron tablas (encontradas: $TABLES, User: $USER_COUNT)"
+  if [ "$TABLES" = "0" ] || [ "$USER_EXISTS" = "0" ]; then
+    echo "   ❌ No se encontraron tablas (encontradas: $TABLES, User: $USER_EXISTS)"
     echo "   Forzando creación con db push --force-reset..."
     $PRISMA_CMD db push --force-reset --accept-data-loss --skip-generate 2>&1
     
@@ -66,25 +68,25 @@ else
     sleep 3
     echo "   Verificando nuevamente después de force-reset..."
     
-    TABLES_RESULT=$(echo "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" | $PRISMA_CMD db execute --stdin 2>&1)
-    echo "   Debug - Resultado COUNT después de force-reset: $TABLES_RESULT"
+    PULL_OUTPUT=$($PRISMA_CMD db pull --print 2>&1 | head -20)
     
-    TABLES=$(echo "$TABLES_RESULT" | tr -d ' ' | grep -oE '[0-9]+' | head -1)
-    if [ -z "$TABLES" ]; then
+    if echo "$PULL_OUTPUT" | grep -q "model"; then
+      TABLES=$(echo "$PULL_OUTPUT" | grep -c "model" || echo "0")
+      echo "   Después de force-reset: $TABLES tablas encontradas"
+    else
       TABLES="0"
+      echo "   Después de force-reset: 0 tablas encontradas"
     fi
     
-    USER_CHECK=$(echo "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'User';" | $PRISMA_CMD db execute --stdin 2>&1)
-    echo "   Debug - Resultado User check después de force-reset: $USER_CHECK"
-    
-    USER_COUNT=$(echo "$USER_CHECK" | tr -d ' ' | grep -oE '[0-9]+' | head -1)
-    if [ -z "$USER_COUNT" ]; then
-      USER_COUNT="0"
+    if echo "$PULL_OUTPUT" | grep -q "model User"; then
+      USER_EXISTS="1"
+    else
+      USER_EXISTS="0"
     fi
     
-    echo "   Después de force-reset: $TABLES tablas, User: $USER_COUNT"
+    echo "   Después de force-reset: $TABLES tablas, User: $USER_EXISTS"
     
-    if [ "$TABLES" = "0" ] || [ "$USER_COUNT" = "0" ]; then
+    if [ "$TABLES" = "0" ] || [ "$USER_EXISTS" = "0" ]; then
       echo "   ❌ CRÍTICO: Las tablas NO se están creando después de force-reset"
       echo "   Esto indica un problema de permisos o conexión"
       echo "   Verifica:"
@@ -95,6 +97,8 @@ else
       echo "   Continuando para que puedas ver los errores en runtime..."
     else
       echo "   ✅ Tablas creadas exitosamente: $TABLES tablas, User existe"
+    else
+      echo "   ✅ Verificación exitosa después de force-reset: $TABLES tablas, User existe"
     fi
   else
     echo "   ✅ Verificación exitosa: $TABLES tablas encontradas, User existe"
