@@ -69,12 +69,12 @@ export default function DashboardPage() {
               <CardTitle>Acciones Rápidas</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button asChild className="w-full">
-                <Link href="/dashboard/movements/sale">Nueva Venta</Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link href="/dashboard/movements/purchase">Nueva Compra</Link>
-              </Button>
+              <Link href="/dashboard/movements/sale" className="block">
+                <Button className="w-full">Nueva Venta</Button>
+              </Link>
+              <Link href="/dashboard/movements/purchase" className="block">
+                <Button variant="outline" className="w-full">Nueva Compra</Button>
+              </Link>
             </CardContent>
           </Card>
 
@@ -83,12 +83,12 @@ export default function DashboardPage() {
               <CardTitle>Navegación</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button asChild variant="outline" className="w-full">
-                <Link href="/dashboard/inventory">Inventario</Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link href="/dashboard/stats">Estadísticas</Link>
-              </Button>
+              <Link href="/dashboard/inventory" className="block">
+                <Button variant="outline" className="w-full">Inventario</Button>
+              </Link>
+              <Link href="/dashboard/stats" className="block">
+                <Button variant="outline" className="w-full">Estadísticas</Button>
+              </Link>
             </CardContent>
           </Card>
         </div>
@@ -102,9 +102,9 @@ export default function DashboardPage() {
               <p className="mb-4">
                 Para comenzar, necesitas crear una compañía.
               </p>
-              <Button asChild>
-                <Link href="/dashboard/settings/companies">Crear Compañía</Link>
-              </Button>
+              <Link href="/dashboard/settings/companies">
+                <Button>Crear Compañía</Button>
+              </Link>
             </CardContent>
           </Card>
         )}
