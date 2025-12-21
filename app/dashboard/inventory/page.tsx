@@ -107,29 +107,48 @@ export default function InventoryPage() {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {products.map((product) => (
-            <Card key={product.id}>
-              <CardHeader>
-                <CardTitle>{product.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {product.imageBase64 && (
-                  <img
-                    src={product.imageBase64}
-                    alt={product.name}
-                    className="w-full h-48 object-cover rounded-md mb-4"
-                  />
-                )}
-                <p className="text-sm text-muted-foreground mb-2">
-                  {product.description || "Sin descripción"}
-                </p>
-                <p className="text-sm">
-                  Umbral mínimo: {product.minStockThreshold} unidades
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {products.map((product) => {
+            const totalStock = product.stock?.reduce((sum: number, s: any) => sum + s.quantity, 0) || 0
+            const isLowStock = totalStock < product.minStockThreshold
+            
+            return (
+              <Card key={product.id} className={`hover:shadow-lg transition-shadow ${isLowStock ? 'border-red-300 bg-red-50' : ''}`}>
+                <CardHeader>
+                  <CardTitle className="text-lg">{product.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {product.imageBase64 && (
+                    <img
+                      src={product.imageBase64}
+                      alt={product.name}
+                      className="w-full h-48 object-cover rounded-md mb-4"
+                    />
+                  )}
+                  <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                    {product.description || "Sin descripción"}
+                  </p>
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">Stock Total:</span>
+                      <span className={`font-bold ${isLowStock ? 'text-red-600' : 'text-green-600'}`}>
+                        {totalStock} unidades
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">Umbral mínimo:</span>
+                      <span className="text-sm">{product.minStockThreshold} unidades</span>
+                    </div>
+                    {isLowStock && (
+                      <p className="text-xs text-red-600 font-semibold mt-2">
+                        ⚠️ Stock bajo
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
 
         {products.length === 0 && (

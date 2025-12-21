@@ -68,13 +68,18 @@ export default function SalePage() {
   return (
     <div className="p-8">
       <div className="max-w-3xl mx-auto">
-        <div className="mb-4">
+        <div className="mb-6">
           <BackButton href="/dashboard" />
         </div>
-        <h1 className="text-3xl font-bold mb-6">Nueva Venta</h1>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Nueva Venta</h1>
+          <p className="text-muted-foreground mt-1">
+            Registra una nueva venta de productos de tu inventario
+          </p>
+        </div>
         <Card>
           <CardHeader>
-            <CardTitle>Registrar Venta</CardTitle>
+            <CardTitle>Información de la Venta</CardTitle>
           </CardHeader>
           <CardContent>
             <SaleForm

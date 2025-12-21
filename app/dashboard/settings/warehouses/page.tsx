@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
 import { BackButton } from "@/components/shared/BackButton"
 import { toast } from "sonner"
+import { Warehouse } from "lucide-react"
 
 export default function WarehousesPage() {
   const { data: session, status } = useSession()
@@ -219,23 +220,32 @@ export default function WarehousesPage() {
           </CardHeader>
           <CardContent>
             {warehouses.length === 0 ? (
-              <p className="text-muted-foreground">
-                No hay bodegas. Crea una para comenzar.
-              </p>
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">
+                  No hay bodegas registradas.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Crea tu primera bodega usando el formulario de arriba.
+                </p>
+              </div>
             ) : (
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {warehouses.map((warehouse) => (
-                  <div
-                    key={warehouse.id}
-                    className="p-4 border rounded-lg"
-                  >
-                    <h3 className="font-semibold">{warehouse.name}</h3>
-                    {warehouse.description && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {warehouse.description}
-                      </p>
-                    )}
-                  </div>
+                  <Card key={warehouse.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg mb-1">{warehouse.name}</h3>
+                          {warehouse.description && (
+                            <p className="text-sm text-muted-foreground">
+                              {warehouse.description}
+                            </p>
+                          )}
+                        </div>
+                        <Warehouse className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             )}

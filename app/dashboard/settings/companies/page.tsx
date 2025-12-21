@@ -122,24 +122,34 @@ export default function CompaniesSettingsPage() {
           </CardHeader>
           <CardContent>
             {companies.length === 0 ? (
-              <p className="text-muted-foreground">
-                No tienes compañías. Crea una para comenzar.
-              </p>
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">
+                  No tienes compañías registradas.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Crea tu primera compañía usando el formulario de arriba.
+                </p>
+              </div>
             ) : (
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {companies.map((company) => (
-                  <div
-                    key={company.id}
-                    className="p-4 border rounded-lg flex justify-between items-center"
-                  >
-                    <div>
-                      <h3 className="font-semibold">{company.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {company._count?.products || 0} productos •{" "}
-                        {company._count?.warehouses || 0} bodegas
-                      </p>
-                    </div>
-                  </div>
+                  <Card key={company.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg mb-2">{company.name}</h3>
+                          <div className="flex gap-4 text-sm text-muted-foreground">
+                            <span>
+                              📦 {company._count?.products || 0} productos
+                            </span>
+                            <span>
+                              🏢 {company._count?.warehouses || 0} bodegas
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             )}

@@ -54,12 +54,18 @@ export default function PurchasePage() {
   return (
     <div className="p-8">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-4">
+        <div className="mb-6">
           <BackButton href="/dashboard" />
+        </div>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Nueva Compra</h1>
+          <p className="text-muted-foreground mt-1">
+            Registra una nueva compra de productos para tu inventario
+          </p>
         </div>
         <Card>
           <CardHeader>
-            <CardTitle>Nueva Compra</CardTitle>
+            <CardTitle>Información de la Compra</CardTitle>
           </CardHeader>
           <CardContent>
             <PurchaseForm 
