@@ -12,16 +12,25 @@ else
   PRISMA_CMD="npx -y prisma@5.19.0"
 fi
 
-# Intentar migraciones primero
-echo "   Intentando migraciones..."
-$PRISMA_CMD migrate deploy 2>/dev/null || {
+# Intentar migraciones primero (solo si existen)
+if [ -d "./prisma/migrations" ] && [ "$(ls -A ./prisma/migrations 2>/dev/null)" ]; then
+  echo "   Aplicando migraciones existentes..."
+  $PRISMA_CMD migrate deploy || {
+    echo "   ⚠️  Error aplicando migraciones, intentando db push..."
+    $PRISMA_CMD db push --accept-data-loss --skip-generate || {
+      echo "❌ Error configurando base de datos"
+      exit 1
+    }
+  }
+else
   echo "   No hay migraciones, creando esquema con db push..."
   $PRISMA_CMD db push --accept-data-loss --skip-generate || {
     echo "❌ Error creando esquema de base de datos"
+    echo "   Verifica que DATABASE_URL esté configurada correctamente"
     exit 1
   }
   echo "   ✅ Esquema creado exitosamente"
-}
+fi
 
 echo "✅ Base de datos lista"
 
