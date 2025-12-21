@@ -19,7 +19,7 @@ type CustomerFormData = {
 interface CustomerFormProps {
   companyId: string
   customer?: Customer
-  onSuccess?: ((customer?: Customer) => void) | (() => void)
+  onSuccess?: (customer?: Customer) => void
   onCancel?: () => void
 }
 

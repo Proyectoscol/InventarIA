@@ -46,6 +46,7 @@ interface SaleFormProps {
   warehouses: Array<{ id: string; name: string }>
   customers?: Array<{ id: string; name: string }>
   onSuccess?: () => void
+  onCustomerCreated?: (customer: any) => void
 }
 
 export function SaleForm({ companyId, warehouses, customers: initialCustomers = [], onSuccess, onCustomerCreated }: SaleFormProps) {
