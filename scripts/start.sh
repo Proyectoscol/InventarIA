@@ -4,9 +4,14 @@ set -e
 echo "🚀 Iniciando aplicación InventarIA..."
 
 # Construir DATABASE_URL si Easypanel proporciona variables separadas
+# Esto DEBE hacerse antes de ejecutar cualquier comando de Prisma
 if [ -z "$DATABASE_URL" ] && [ -n "$POSTGRES_HOST" ]; then
   export DATABASE_URL="postgres://${POSTGRES_USERNAME:-postgres}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DATABASE}?sslmode=disable"
-  echo "   Construida DATABASE_URL desde variables separadas de Easypanel"
+  echo "   ✅ Construida DATABASE_URL desde variables separadas de Easypanel"
+elif [ -z "$DATABASE_URL" ]; then
+  echo "   ❌ ERROR: DATABASE_URL no está definida"
+  echo "   Configura DATABASE_URL o las variables POSTGRES_* en Easypanel"
+  exit 1
 fi
 
 # Ejecutar migraciones o crear esquema
@@ -17,6 +22,9 @@ if [ -f "./node_modules/.bin/prisma" ]; then
 else
   PRISMA_CMD="npx -y prisma@5.19.0"
 fi
+
+# Asegurar que DATABASE_URL esté disponible para Prisma
+export DATABASE_URL
 
 # Intentar migraciones primero (solo si existen)
 if [ -d "./prisma/migrations" ] && [ "$(ls -A ./prisma/migrations 2>/dev/null)" ]; then
