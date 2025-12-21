@@ -1,0 +1,16 @@
+name: Deploy to Easypanel
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify deployment
+        run: |
+          echo "🚀 Push realizado. Easypanel debería detectar los cambios automáticamente si está configurado con webhook."
+
