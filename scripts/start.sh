@@ -133,8 +133,9 @@ else
   # Verificar realmente si las tablas existen
   if [ "$TABLES" = "0" ] || [ "$TABLES" -lt "$EXPECTED_TABLES" ] || [ "$ALL_TABLES_PRESENT" = "false" ]; then
     echo "   ❌ No se encontraron todas las tablas necesarias (encontradas: $TABLES, esperadas: $EXPECTED_TABLES)"
-    echo "   Forzando creación completa con db push --force-reset..."
-    DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db push --force-reset --accept-data-loss --skip-generate 2>&1
+    echo "   Intentando crear tablas faltantes sin borrar datos existentes..."
+    # Primero intentar db push normal (sin force-reset para no borrar datos)
+    DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db push --accept-data-loss --skip-generate 2>&1
     
     # Esperar y verificar nuevamente
     sleep 3
@@ -164,15 +165,15 @@ else
     done
     
     if [ "$TABLES" = "0" ] || [ "$TABLES" -lt "$EXPECTED_TABLES" ] || [ "$ALL_TABLES_PRESENT" = "false" ]; then
-      echo "   ❌ CRÍTICO: Las tablas NO se están creando después de force-reset"
-      echo "   Esto indica un problema de permisos o conexión"
+      echo "   ⚠️  Algunas tablas aún faltan después de db push"
+      echo "   Esto puede indicar un problema de permisos o que las tablas necesitan crearse manualmente"
       echo "   Verifica:"
       echo "   1. El usuario de PostgreSQL tiene permisos CREATE TABLE en el schema public"
       echo "   2. DATABASE_URL es correcta: ${DATABASE_URL:0:60}..."
       echo "   3. La base de datos 'inventory' existe"
-      echo "   Ejecuta los comandos GRANT del archivo FIX-PERMISSIONS.sql"
+      echo "   Ejecuta los comandos GRANT del archivo FIX-PERMISSIONS.sql si es necesario"
       echo ""
-      echo "   Intentando crear tablas faltantes manualmente..."
+      echo "   Intentando crear tablas faltantes manualmente (sin borrar datos existentes)..."
       
       # Intentar crear las tablas faltantes usando SQL directo
       echo "   Creando Batch, Customer y Movement usando SQL..."
