@@ -32,32 +32,50 @@ else
   echo "   Verificando que las tablas se crearon..."
   sleep 2  # Dar tiempo para que se completen las operaciones
   
-  # Verificar tablas con una consulta más simple (usando echo | para compatibilidad con sh)
-  TABLES_RESULT=$(echo "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public';" | $PRISMA_CMD db execute --stdin 2>&1)
+  # Verificar tablas con una consulta más precisa
+  # Primero verificar si existe la tabla User (que debería existir)
+  USER_TABLE_CHECK=$(echo "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'User');" | $PRISMA_CMD db execute --stdin 2>&1)
+  
+  # También contar todas las tablas
+  TABLES_RESULT=$(echo "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" | $PRISMA_CMD db execute --stdin 2>&1)
   TABLES=$(echo "$TABLES_RESULT" | grep -oE '[0-9]+' | head -1 || echo "0")
   
-  if [ "$TABLES" = "0" ] || [ -z "$TABLES" ]; then
-    echo "   ⚠️  No se encontraron tablas, intentando con force-reset..."
+  # Verificar si User existe
+  USER_EXISTS=$(echo "$USER_TABLE_CHECK" | grep -i "true\|t\|1" || echo "")
+  
+  echo "   Resultado verificación: $TABLES tablas encontradas"
+  echo "   Tabla User existe: $USER_EXISTS"
+  
+  # Verificar realmente si las tablas existen (especialmente User)
+  if [ -z "$USER_EXISTS" ] || [ "$TABLES" = "0" ]; then
+    echo "   ⚠️  No se encontraron tablas reales, forzando creación..."
+    echo "   Ejecutando db push con force-reset..."
     $PRISMA_CMD db push --force-reset --accept-data-loss --skip-generate 2>&1
     
-    # Verificar nuevamente después de force-reset
-    sleep 2
-    TABLES_RESULT=$(echo "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public';" | $PRISMA_CMD db execute --stdin 2>&1)
-    TABLES=$(echo "$TABLES_RESULT" | grep -oE '[0-9]+' | head -1 || echo "0")
+    # Esperar y verificar nuevamente
+    sleep 3
+    echo "   Verificando nuevamente después de force-reset..."
     
-    if [ "$TABLES" = "0" ]; then
-      echo "   ❌ CRÍTICO: No se pudieron crear las tablas"
-      echo "   Esto puede deberse a:"
-      echo "   1. Permisos insuficientes en la base de datos"
-      echo "   2. DATABASE_URL incorrecta"
-      echo "   3. La base de datos no existe"
-      echo "   Verifica los logs anteriores para más detalles"
-      # No salir con error, permitir que el servidor inicie para ver errores en runtime
+    USER_TABLE_CHECK=$(echo "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'User');" | $PRISMA_CMD db execute --stdin 2>&1)
+    TABLES_RESULT=$(echo "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" | $PRISMA_CMD db execute --stdin 2>&1)
+    TABLES=$(echo "$TABLES_RESULT" | grep -oE '[0-9]+' | head -1 || echo "0")
+    USER_EXISTS=$(echo "$USER_TABLE_CHECK" | grep -i "true\|t\|1" || echo "")
+    
+    echo "   Después de force-reset: $TABLES tablas, User existe: $USER_EXISTS"
+    
+    if [ -z "$USER_EXISTS" ] || [ "$TABLES" = "0" ]; then
+      echo "   ❌ CRÍTICO: Las tablas NO se están creando"
+      echo "   Posibles causas:"
+      echo "   1. El usuario de PostgreSQL no tiene permisos CREATE TABLE"
+      echo "   2. DATABASE_URL apunta a una base de datos diferente"
+      echo "   3. Hay un problema con la conexión a la base de datos"
+      echo "   Ejecuta la query en VERIFY-DB.sql para verificar manualmente"
+      echo "   Continuando para que puedas ver los errores en runtime..."
     else
-      echo "   ✅ Se encontraron $TABLES tablas después de force-reset"
+      echo "   ✅ Tablas creadas exitosamente después de force-reset"
     fi
   else
-    echo "   ✅ Se encontraron $TABLES tablas en la base de datos"
+    echo "   ✅ Verificación exitosa: $TABLES tablas encontradas, User existe"
   fi
   
   echo "   ✅ Esquema configurado"
