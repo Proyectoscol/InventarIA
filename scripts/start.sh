@@ -72,12 +72,25 @@ if [ -d "./prisma/migrations" ] && [ "$(ls -A ./prisma/migrations 2>/dev/null)" 
 else
   echo "   No hay migraciones, creando esquema con db push..."
   
-  # Primero intentar db push normal
-  echo "   Ejecutando db push inicial..."
-  DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db push --accept-data-loss --skip-generate 2>&1 || {
-    echo "   ⚠️  Error en db push inicial, intentando force-reset..."
-    DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db push --force-reset --accept-data-loss --skip-generate 2>&1
-  }
+  # Primero intentar crear una migración inicial
+  echo "   Intentando crear migración inicial..."
+  MIGRATE_OUTPUT=$(DATABASE_URL="$DATABASE_URL" $PRISMA_CMD migrate dev --name init --create-only 2>&1 || echo "MIGRATE_FAILED")
+  
+  if echo "$MIGRATE_OUTPUT" | grep -q "MIGRATE_FAILED"; then
+    echo "   No se pudo crear migración, usando db push..."
+    # Primero intentar db push normal
+    echo "   Ejecutando db push inicial..."
+    DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db push --accept-data-loss --skip-generate 2>&1 || {
+      echo "   ⚠️  Error en db push inicial, intentando force-reset..."
+      DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db push --force-reset --accept-data-loss --skip-generate 2>&1
+    }
+  else
+    echo "   Migración creada, aplicándola..."
+    DATABASE_URL="$DATABASE_URL" $PRISMA_CMD migrate deploy 2>&1 || {
+      echo "   ⚠️  Error aplicando migración, usando db push como fallback..."
+      DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db push --accept-data-loss --skip-generate 2>&1
+    }
+  fi
   
   # Verificar que las tablas se crearon
   echo "   Verificando que las tablas se crearon..."
@@ -157,8 +170,91 @@ else
       echo "   1. El usuario de PostgreSQL tiene permisos CREATE TABLE en el schema public"
       echo "   2. DATABASE_URL es correcta: ${DATABASE_URL:0:60}..."
       echo "   3. La base de datos 'inventory' existe"
-      echo "   Ejecuta: GRANT ALL ON SCHEMA public TO postgres;"
-      echo "   Continuando para que puedas ver los errores en runtime..."
+      echo "   Ejecuta los comandos GRANT del archivo FIX-PERMISSIONS.sql"
+      echo ""
+      echo "   Intentando crear tablas faltantes manualmente..."
+      
+      # Intentar crear las tablas faltantes usando SQL directo
+      echo "   Creando Batch, Customer y Movement usando SQL..."
+      
+      # Batch table
+      echo "   Creando tabla batches..."
+      echo "CREATE TABLE IF NOT EXISTS \"batches\" (
+        \"id\" TEXT NOT NULL,
+        \"batchNumber\" TEXT NOT NULL,
+        \"productId\" TEXT NOT NULL,
+        \"warehouseId\" TEXT NOT NULL,
+        \"initialQuantity\" INTEGER NOT NULL,
+        \"remainingQty\" INTEGER NOT NULL,
+        \"unitCost\" DECIMAL(15,2) NOT NULL,
+        \"purchaseDate\" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \"createdAt\" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT \"batches_pkey\" PRIMARY KEY (\"id\"),
+        CONSTRAINT \"batches_batchNumber_key\" UNIQUE (\"batchNumber\")
+      );" | DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db execute --stdin 2>&1 || echo "   ⚠️  Error creando batches"
+      
+      # Customer table
+      echo "   Creando tabla customers..."
+      echo "CREATE TABLE IF NOT EXISTS \"customers\" (
+        \"id\" TEXT NOT NULL,
+        \"name\" TEXT NOT NULL,
+        \"email\" TEXT,
+        \"phone\" TEXT,
+        \"address\" TEXT,
+        \"companyId\" TEXT NOT NULL,
+        \"createdAt\" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \"updatedAt\" TIMESTAMP(3) NOT NULL,
+        CONSTRAINT \"customers_pkey\" PRIMARY KEY (\"id\")
+      );" | DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db execute --stdin 2>&1 || echo "   ⚠️  Error creando customers"
+      
+      # Movement table (más compleja)
+      echo "   Creando tabla movements..."
+      echo "CREATE TABLE IF NOT EXISTS \"movements\" (
+        \"id\" TEXT NOT NULL,
+        \"movementNumber\" TEXT NOT NULL,
+        \"type\" TEXT NOT NULL,
+        \"productId\" TEXT NOT NULL,
+        \"warehouseId\" TEXT NOT NULL,
+        \"batchId\" TEXT,
+        \"quantity\" INTEGER NOT NULL,
+        \"unitPrice\" DECIMAL(15,2) NOT NULL,
+        \"totalAmount\" DECIMAL(15,2) NOT NULL,
+        \"paymentType\" TEXT NOT NULL,
+        \"cashAmount\" DECIMAL(15,2),
+        \"creditAmount\" DECIMAL(15,2),
+        \"creditPaid\" BOOLEAN NOT NULL DEFAULT false,
+        \"hasShipping\" BOOLEAN NOT NULL DEFAULT false,
+        \"shippingCost\" DECIMAL(15,2),
+        \"shippingPaidBy\" TEXT,
+        \"customerId\" TEXT,
+        \"unitCost\" DECIMAL(15,2),
+        \"profit\" DECIMAL(15,2),
+        \"notes\" TEXT,
+        \"movementDate\" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \"createdAt\" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \"updatedAt\" TIMESTAMP(3) NOT NULL,
+        CONSTRAINT \"movements_pkey\" PRIMARY KEY (\"id\"),
+        CONSTRAINT \"movements_movementNumber_key\" UNIQUE (\"movementNumber\")
+      );" | DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db execute --stdin 2>&1 || echo "   ⚠️  Error creando movements"
+      
+      # Crear índices y foreign keys después
+      echo "   Creando índices y relaciones..."
+      echo "CREATE INDEX IF NOT EXISTS \"batches_productId_warehouseId_remainingQty_idx\" ON \"batches\"(\"productId\", \"warehouseId\", \"remainingQty\");" | DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db execute --stdin 2>&1 || true
+      echo "CREATE INDEX IF NOT EXISTS \"movements_productId_warehouseId_movementDate_idx\" ON \"movements\"(\"productId\", \"warehouseId\", \"movementDate\");" | DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db execute --stdin 2>&1 || true
+      echo "CREATE INDEX IF NOT EXISTS \"movements_type_movementDate_idx\" ON \"movements\"(\"type\", \"movementDate\");" | DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db execute --stdin 2>&1 || true
+      
+      echo "   Verificando nuevamente después de creación manual..."
+      sleep 2
+      PULL_OUTPUT=$(DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db pull --print 2>&1 | head -100)
+      TABLES=$(echo "$PULL_OUTPUT" | grep -c "^model " || echo "0")
+      echo "   Tablas encontradas después de creación manual: $TABLES de $EXPECTED_TABLES"
+      
+      if [ "$TABLES" -lt "$EXPECTED_TABLES" ]; then
+        echo "   ⚠️  Aún faltan tablas. Esto requiere permisos de administrador en PostgreSQL."
+        echo "   Continuando para que puedas ver los errores en runtime..."
+      else
+        echo "   ✅ Todas las tablas creadas exitosamente"
+      fi
     else
       echo "   ✅ Tablas creadas exitosamente: $TABLES tablas de $EXPECTED_TABLES esperadas"
     fi
