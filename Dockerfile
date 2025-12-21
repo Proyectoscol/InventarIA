@@ -7,15 +7,14 @@ RUN apk add --no-cache libc6-compat openssl
 FROM base AS deps
 WORKDIR /app
 
+# Copiar schema de Prisma primero (necesario para postinstall script)
+COPY prisma ./prisma
+
 # Copiar archivos de dependencias
 COPY package.json package-lock.json* ./
 
-# Instalar dependencias (sin ejecutar postinstall aún)
-RUN npm ci --legacy-peer-deps --ignore-scripts
-
-# Copiar schema de Prisma y generar cliente
-COPY prisma ./prisma
-RUN npx prisma generate
+# Instalar dependencias (postinstall ejecutará prisma generate)
+RUN npm ci --legacy-peer-deps
 
 # Rebuild the source code only when needed
 FROM base AS builder
