@@ -11,7 +11,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select } from "@/components/ui/select"
 import { ProductSearch } from "./ProductSearch"
+import { CustomerForm } from "./CustomerForm"
 import { toast } from "sonner"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 const saleSchema = z.object({
   warehouseId: z.string().min(1, "Selecciona una bodega"),
@@ -49,6 +51,7 @@ interface SaleFormProps {
 export function SaleForm({ companyId, warehouses, customers = [], onSuccess }: SaleFormProps) {
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [showCreateCustomer, setShowCreateCustomer] = useState(false)
 
   const {
     register,
@@ -79,7 +82,8 @@ export function SaleForm({ companyId, warehouses, customers = [], onSuccess }: S
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
-          companyId
+          companyId,
+          customerId: data.customerId && data.customerId.trim() !== "" ? data.customerId : null
         })
       })
 
@@ -177,7 +181,17 @@ export function SaleForm({ companyId, warehouses, customers = [], onSuccess }: S
 
       {/* Cliente (Opcional) */}
       <div>
-        <Label>Cliente (Opcional)</Label>
+        <div className="flex justify-between items-center mb-2">
+          <Label>Cliente (Opcional)</Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowCreateCustomer(true)}
+          >
+            + Crear Cliente
+          </Button>
+        </div>
         <Select {...register("customerId")}>
           <option value="">Ninguno</option>
           {customers.map((c) => (
@@ -185,6 +199,38 @@ export function SaleForm({ companyId, warehouses, customers = [], onSuccess }: S
           ))}
         </Select>
       </div>
+
+      {/* Modal para crear cliente */}
+      {showCreateCustomer && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Crear Nuevo Cliente</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCreateCustomer(false)}
+                >
+                  ✕
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <CustomerForm
+                companyId={companyId}
+                onSuccess={(newCustomer) => {
+                  setCustomers([...customers, newCustomer])
+                  setValue("customerId", newCustomer.id)
+                  setShowCreateCustomer(false)
+                  toast.success("✅ Cliente creado exitosamente")
+                }}
+                onCancel={() => setShowCreateCustomer(false)}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Tipo de Pago */}
       <div>

@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
           hasShipping: data.hasShipping || false,
           shippingCost: data.shippingCost,
           shippingPaidBy: data.shippingPaidBy,
-          customerId: data.customerId,
+          customerId: data.customerId && data.customerId.trim() !== "" ? data.customerId : null,
           notes: data.notes
         }
       })
