@@ -10,6 +10,10 @@ WORKDIR /app
 # Copiar schema de Prisma primero (necesario para postinstall script)
 COPY prisma ./prisma
 
+# Crear directorio scripts y copiar script build-db-url.js (necesario para postinstall)
+RUN mkdir -p ./scripts
+COPY scripts/build-db-url.js ./scripts/build-db-url.js
+
 # Copiar archivos de dependencias
 COPY package.json package-lock.json* ./
 
