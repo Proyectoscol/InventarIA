@@ -32,8 +32,8 @@ else
   echo "   Verificando que las tablas se crearon..."
   sleep 2  # Dar tiempo para que se completen las operaciones
   
-  # Verificar tablas con una consulta más simple
-  TABLES_RESULT=$($PRISMA_CMD db execute --stdin <<< "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public';" 2>&1)
+  # Verificar tablas con una consulta más simple (usando echo | para compatibilidad con sh)
+  TABLES_RESULT=$(echo "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public';" | $PRISMA_CMD db execute --stdin 2>&1)
   TABLES=$(echo "$TABLES_RESULT" | grep -oE '[0-9]+' | head -1 || echo "0")
   
   if [ "$TABLES" = "0" ] || [ -z "$TABLES" ]; then
@@ -42,7 +42,7 @@ else
     
     # Verificar nuevamente después de force-reset
     sleep 2
-    TABLES_RESULT=$($PRISMA_CMD db execute --stdin <<< "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public';" 2>&1)
+    TABLES_RESULT=$(echo "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public';" | $PRISMA_CMD db execute --stdin 2>&1)
     TABLES=$(echo "$TABLES_RESULT" | grep -oE '[0-9]+' | head -1 || echo "0")
     
     if [ "$TABLES" = "0" ]; then
