@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { BackButton } from "@/components/shared/BackButton"
+import { toast } from "sonner"
 
 export default function CompaniesSettingsPage() {
   const { data: session, status } = useSession()
@@ -78,6 +80,9 @@ export default function CompaniesSettingsPage() {
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-4xl mx-auto">
+        <div className="mb-4">
+          <BackButton href="/dashboard" />
+        </div>
         <h1 className="text-3xl font-bold mb-6">Configuración de Compañías</h1>
 
         <Card className="mb-6">

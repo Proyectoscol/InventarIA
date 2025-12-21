@@ -88,10 +88,19 @@ export function SaleForm({ companyId, warehouses, customers = [], onSuccess }: S
         throw new Error(error.error || "Error al registrar venta")
       }
 
-      toast.success("Venta registrada exitosamente")
-      onSuccess?.()
+      toast.success("✅ Venta registrada exitosamente", {
+        description: "La venta se ha guardado correctamente",
+        duration: 3000
+      })
+      // Esperar un momento para que el usuario vea el mensaje
+      setTimeout(() => {
+        onSuccess?.()
+      }, 500)
     } catch (error: any) {
-      toast.error(error.message || "Error al registrar venta")
+      toast.error("❌ Error al registrar venta", {
+        description: error.message || "Por favor, intenta nuevamente",
+        duration: 4000
+      })
     } finally {
       setLoading(false)
     }

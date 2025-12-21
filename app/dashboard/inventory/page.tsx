@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ProductForm } from "@/components/forms/ProductForm"
+import { BackButton } from "@/components/shared/BackButton"
 
 export default function InventoryPage() {
   const { data: session, status } = useSession()
@@ -54,17 +55,29 @@ export default function InventoryPage() {
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
+        <div className="mb-4">
+          <BackButton href="/dashboard" />
+        </div>
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Inventario</h1>
-          {companyId && (
+          {companyId && !showAddProduct && (
             <Button onClick={() => setShowAddProduct(true)}>+ Agregar Producto</Button>
           )}
         </div>
 
         {showAddProduct && companyId && (
-          <Card className="mb-6">
+          <Card className="mb-6 border-2 border-primary">
             <CardHeader>
-              <CardTitle>Agregar Nuevo Producto</CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle>Agregar Nuevo Producto</CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowAddProduct(false)}
+                >
+                  ✕ Cerrar
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <ProductForm

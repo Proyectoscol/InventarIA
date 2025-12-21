@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
+import { BackButton } from "@/components/shared/BackButton"
+import { toast } from "sonner"
 
 export default function WarehousesPage() {
   const { data: session, status } = useSession()
@@ -85,15 +87,25 @@ export default function WarehousesPage() {
       const data = await res.json()
 
       if (res.ok) {
+        toast.success("✅ Bodega creada exitosamente", {
+          description: "La bodega se ha agregado correctamente",
+          duration: 3000
+        })
         setNewWarehouseName("")
         setNewWarehouseDescription("")
         fetchWarehouses(selectedCompanyId)
       } else {
-        alert(`Error: ${data.error || "No se pudo crear la bodega"}`)
+        toast.error("❌ Error al crear bodega", {
+          description: data.error || "Por favor, intenta nuevamente",
+          duration: 4000
+        })
       }
     } catch (error: any) {
       console.error("Error creando bodega:", error)
-      alert(`Error: ${error.message || "Error al crear la bodega"}`)
+      toast.error("❌ Error al crear bodega", {
+        description: error.message || "Por favor, intenta nuevamente",
+        duration: 4000
+      })
     } finally {
       setIsCreating(false)
     }
@@ -132,6 +144,9 @@ export default function WarehousesPage() {
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-4xl mx-auto">
+        <div className="mb-4">
+          <BackButton href="/dashboard" />
+        </div>
         <h1 className="text-3xl font-bold mb-6">Gestión de Bodegas</h1>
 
         <Card className="mb-6">
@@ -183,7 +198,14 @@ export default function WarehousesPage() {
                 />
               </div>
               <Button type="submit" disabled={isCreating || !selectedCompanyId}>
-                {isCreating ? "Creando..." : "Crear Bodega"}
+                {isCreating ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    Creando...
+                  </>
+                ) : (
+                  "✅ Crear Bodega"
+                )}
               </Button>
             </form>
           </CardContent>

@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { PurchaseForm } from "@/components/forms/PurchaseForm"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { BackButton } from "@/components/shared/BackButton"
 
 export default function PurchasePage() {
   const { data: session, status } = useSession()
@@ -53,12 +54,19 @@ export default function PurchasePage() {
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-4xl mx-auto">
+        <div className="mb-4">
+          <BackButton href="/dashboard" />
+        </div>
         <Card>
           <CardHeader>
             <CardTitle>Nueva Compra</CardTitle>
           </CardHeader>
           <CardContent>
-            <PurchaseForm companyId={companyId} warehouses={warehouses} />
+            <PurchaseForm 
+              companyId={companyId} 
+              warehouses={warehouses}
+              onSuccess={() => router.push("/dashboard")}
+            />
           </CardContent>
         </Card>
       </div>

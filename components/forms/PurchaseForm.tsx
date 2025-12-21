@@ -78,10 +78,19 @@ export function PurchaseForm({ companyId, warehouses, onSuccess, onCancel }: Pur
         throw new Error(error.error || "Error al registrar compra")
       }
 
-      toast.success("Compra registrada exitosamente")
-      onSuccess?.()
+      toast.success("✅ Compra registrada exitosamente", {
+        description: "La compra se ha guardado correctamente",
+        duration: 3000
+      })
+      // Esperar un momento para que el usuario vea el mensaje
+      setTimeout(() => {
+        onSuccess?.()
+      }, 500)
     } catch (error: any) {
-      toast.error(error.message || "Error al registrar compra")
+      toast.error("❌ Error al registrar compra", {
+        description: error.message || "Por favor, intenta nuevamente",
+        duration: 4000
+      })
     } finally {
       setLoading(false)
     }

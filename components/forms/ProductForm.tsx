@@ -65,10 +65,19 @@ export function ProductForm({ companyId, product, onSuccess, onCancel }: Product
         throw new Error(error.error || "Error al guardar producto")
       }
 
-      toast.success(product ? "Producto actualizado" : "Producto creado exitosamente")
-      onSuccess?.()
+      toast.success(product ? "✅ Producto actualizado" : "✅ Producto creado exitosamente", {
+        description: product ? "Los cambios se han guardado" : "El producto se ha agregado al inventario",
+        duration: 3000
+      })
+      // Esperar un momento para que el usuario vea el mensaje
+      setTimeout(() => {
+        onSuccess?.()
+      }, 500)
     } catch (error: any) {
-      toast.error(error.message || "Error al guardar producto")
+      toast.error("❌ Error al guardar producto", {
+        description: error.message || "Por favor, intenta nuevamente",
+        duration: 4000
+      })
     }
   }
 
@@ -128,7 +137,16 @@ export function ProductForm({ companyId, product, onSuccess, onCancel }: Product
           </Button>
         )}
         <Button type="submit" disabled={isSubmitting} className="flex-1">
-          {isSubmitting ? "Guardando..." : product ? "Actualizar" : "Crear Producto"}
+          {isSubmitting ? (
+            <>
+              <span className="animate-spin mr-2">⏳</span>
+              Guardando...
+            </>
+          ) : product ? (
+            "✅ Actualizar Producto"
+          ) : (
+            "✅ Crear Producto"
+          )}
         </Button>
       </div>
     </form>

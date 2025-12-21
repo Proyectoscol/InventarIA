@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { SaleForm } from "@/components/forms/SaleForm"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { BackButton } from "@/components/shared/BackButton"
 
 export default function SalePage() {
   const { data: session, status } = useSession()
@@ -67,6 +68,9 @@ export default function SalePage() {
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-3xl mx-auto">
+        <div className="mb-4">
+          <BackButton href="/dashboard" />
+        </div>
         <h1 className="text-3xl font-bold mb-6">Nueva Venta</h1>
         <Card>
           <CardHeader>
