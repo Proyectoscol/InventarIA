@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -48,10 +48,16 @@ interface SaleFormProps {
   onSuccess?: () => void
 }
 
-export function SaleForm({ companyId, warehouses, customers = [], onSuccess, onCustomerCreated }: SaleFormProps) {
+export function SaleForm({ companyId, warehouses, customers: initialCustomers = [], onSuccess, onCustomerCreated }: SaleFormProps) {
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [showCreateCustomer, setShowCreateCustomer] = useState(false)
+  const [customers, setCustomers] = useState(initialCustomers)
+  
+  // Actualizar lista de clientes cuando cambia el prop
+  useEffect(() => {
+    setCustomers(initialCustomers)
+  }, [initialCustomers])
 
   const {
     register,
@@ -222,6 +228,7 @@ export function SaleForm({ companyId, warehouses, customers = [], onSuccess, onC
                 onSuccess={(newCustomer) => {
                   if (newCustomer) {
                     const updatedCustomers = [...customers, newCustomer]
+                    setCustomers(updatedCustomers)
                     setValue("customerId", newCustomer.id)
                     onCustomerCreated?.(newCustomer)
                     setShowCreateCustomer(false)
