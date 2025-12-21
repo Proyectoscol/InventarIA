@@ -3,6 +3,12 @@ set -e
 
 echo "🚀 Iniciando aplicación InventarIA..."
 
+# Construir DATABASE_URL si Easypanel proporciona variables separadas
+if [ -z "$DATABASE_URL" ] && [ -n "$POSTGRES_HOST" ]; then
+  export DATABASE_URL="postgres://${POSTGRES_USERNAME:-postgres}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DATABASE}?sslmode=disable"
+  echo "   Construida DATABASE_URL desde variables separadas de Easypanel"
+fi
+
 # Ejecutar migraciones o crear esquema
 echo "🔄 Configurando base de datos de Prisma..."
 # Usar Prisma desde node_modules (versión correcta)
