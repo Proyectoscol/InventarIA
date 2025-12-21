@@ -48,7 +48,7 @@ interface SaleFormProps {
   onSuccess?: () => void
 }
 
-export function SaleForm({ companyId, warehouses, customers = [], onSuccess }: SaleFormProps) {
+export function SaleForm({ companyId, warehouses, customers = [], onSuccess, onCustomerCreated }: SaleFormProps) {
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [showCreateCustomer, setShowCreateCustomer] = useState(false)
@@ -220,10 +220,12 @@ export function SaleForm({ companyId, warehouses, customers = [], onSuccess }: S
               <CustomerForm
                 companyId={companyId}
                 onSuccess={(newCustomer) => {
-                  setCustomers([...customers, newCustomer])
-                  setValue("customerId", newCustomer.id)
-                  setShowCreateCustomer(false)
-                  toast.success("✅ Cliente creado exitosamente")
+                  if (newCustomer) {
+                    const updatedCustomers = [...customers, newCustomer]
+                    setValue("customerId", newCustomer.id)
+                    onCustomerCreated?.(newCustomer)
+                    setShowCreateCustomer(false)
+                  }
                 }}
                 onCancel={() => setShowCreateCustomer(false)}
               />

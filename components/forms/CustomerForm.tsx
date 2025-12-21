@@ -19,7 +19,7 @@ type CustomerFormData = {
 interface CustomerFormProps {
   companyId: string
   customer?: Customer
-  onSuccess?: () => void
+  onSuccess?: (customer?: Customer) => void
   onCancel?: () => void
 }
 
@@ -57,10 +57,17 @@ export function CustomerForm({ companyId, customer, onSuccess, onCancel }: Custo
         throw new Error(error.error || "Error al guardar cliente")
       }
 
-      toast.success(customer ? "Cliente actualizado" : "Cliente creado exitosamente")
-      onSuccess?.()
+      const savedCustomer = await res.json()
+      toast.success(customer ? "✅ Cliente actualizado" : "✅ Cliente creado exitosamente", {
+        description: customer ? "Los cambios se han guardado" : "El cliente se ha agregado correctamente",
+        duration: 3000
+      })
+      onSuccess?.(savedCustomer)
     } catch (error: any) {
-      toast.error(error.message || "Error al guardar cliente")
+      toast.error("❌ Error al guardar cliente", {
+        description: error.message || "Por favor, intenta nuevamente",
+        duration: 4000
+      })
     }
   }
 
@@ -119,7 +126,16 @@ export function CustomerForm({ companyId, customer, onSuccess, onCancel }: Custo
           </Button>
         )}
         <Button type="submit" disabled={isSubmitting} className="flex-1">
-          {isSubmitting ? "Guardando..." : customer ? "Actualizar" : "Crear Cliente"}
+          {isSubmitting ? (
+            <>
+              <span className="animate-spin mr-2">⏳</span>
+              Guardando...
+            </>
+          ) : customer ? (
+            "✅ Actualizar Cliente"
+          ) : (
+            "✅ Crear Cliente"
+          )}
         </Button>
       </div>
     </form>

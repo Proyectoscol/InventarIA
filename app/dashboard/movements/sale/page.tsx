@@ -87,6 +87,9 @@ export default function SalePage() {
               warehouses={warehouses}
               customers={customers}
               onSuccess={() => router.push("/dashboard")}
+              onCustomerCreated={(newCustomer) => {
+                setCustomers([...customers, newCustomer])
+              }}
             />
           </CardContent>
         </Card>
