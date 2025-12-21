@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { ProductForm } from "@/components/forms/ProductForm"
 
 export default function InventoryPage() {
   const { data: session, status } = useSession()
@@ -13,6 +14,7 @@ export default function InventoryPage() {
   const [products, setProducts] = useState<any[]>([])
   const [search, setSearch] = useState("")
   const [companyId, setCompanyId] = useState<string>("")
+  const [showAddProduct, setShowAddProduct] = useState(false)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -54,8 +56,30 @@ export default function InventoryPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Inventario</h1>
-          <Button>+ Agregar Producto</Button>
+          {companyId && (
+            <Button onClick={() => setShowAddProduct(true)}>+ Agregar Producto</Button>
+          )}
         </div>
+
+        {showAddProduct && companyId && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Agregar Nuevo Producto</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ProductForm
+                companyId={companyId}
+                onSuccess={() => {
+                  setShowAddProduct(false)
+                  if (companyId) {
+                    fetchProducts(companyId)
+                  }
+                }}
+                onCancel={() => setShowAddProduct(false)}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         <div className="mb-6">
           <Input
