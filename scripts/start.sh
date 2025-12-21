@@ -34,19 +34,23 @@ else
     }
   }
   
-  # Verificar que las tablas se crearon
+  # Verificar que las tablas se crearon ejecutando una consulta SQL directa
   echo "   Verificando que las tablas se crearon..."
-  $PRISMA_CMD db execute --stdin <<< "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" || {
-    echo "   ⚠️  No se pudieron verificar las tablas, pero continuando..."
-  }
+  TABLES=$($PRISMA_CMD db execute --stdin <<< "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" 2>/dev/null | grep -oE '[0-9]+' | head -1 || echo "0")
   
-  echo "   ✅ Esquema creado exitosamente"
-  
-  # Verificar que las tablas existen
-  echo "   Verificando tablas creadas..."
-  if [ -f "./node_modules/.bin/tsx" ]; then
-    ./node_modules/.bin/tsx scripts/verify-db.ts || echo "   ⚠️  No se pudo verificar, pero continuando..."
+  if [ "$TABLES" = "0" ] || [ -z "$TABLES" ]; then
+    echo "   ⚠️  No se encontraron tablas después de db push"
+    echo "   Intentando crear esquema con migraciones iniciales..."
+    # Crear una migración inicial
+    $PRISMA_CMD migrate dev --name init --create-only 2>/dev/null || true
+    $PRISMA_CMD migrate deploy 2>/dev/null || {
+      echo "   ⚠️  Migraciones también fallaron, pero continuando..."
+    }
+  else
+    echo "   ✅ Se encontraron $TABLES tablas en la base de datos"
   fi
+  
+  echo "   ✅ Esquema configurado"
 fi
 
 echo "✅ Base de datos lista"
