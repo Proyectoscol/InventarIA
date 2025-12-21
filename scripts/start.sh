@@ -144,12 +144,12 @@ else
     
     if echo "$PULL_OUTPUT" | grep -q "model"; then
       TABLES=$(echo "$PULL_OUTPUT" | grep -c "^model " || echo "0")
-      echo "   Después de force-reset: $TABLES tablas encontradas (esperadas: $EXPECTED_TABLES)"
+      echo "   Después de db push: $TABLES tablas encontradas (esperadas: $EXPECTED_TABLES)"
       echo "   Tablas encontradas:"
       echo "$PULL_OUTPUT" | grep "^model " | sed 's/^model /     - /' || true
     else
       TABLES="0"
-      echo "   Después de force-reset: 0 tablas encontradas"
+      echo "   Después de db push: 0 tablas encontradas"
     fi
     
     # Verificar nuevamente todas las tablas esperadas
