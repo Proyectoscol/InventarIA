@@ -81,8 +81,7 @@ else
     # Primero intentar db push normal
     echo "   Ejecutando db push inicial..."
     DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db push --accept-data-loss --skip-generate 2>&1 || {
-      echo "   ⚠️  Error en db push inicial, intentando force-reset..."
-      DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db push --force-reset --accept-data-loss --skip-generate 2>&1
+      echo "   ⚠️  Error en db push inicial, pero continuando (preservando datos)..."
     }
   else
     echo "   Migración creada, aplicándola..."
