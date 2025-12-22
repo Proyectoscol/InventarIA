@@ -350,15 +350,15 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
           onValueChange={(val) => setValue("paymentType", val as any)}
         >
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="cash" id="cash" />
+            <RadioGroupItem value="cash" id="cash" name="payment-type" />
             <Label htmlFor="cash">Efectivo</Label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="credit" id="credit" />
+            <RadioGroupItem value="credit" id="credit" name="payment-type" />
             <Label htmlFor="credit">Crédito</Label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="mixed" id="mixed" />
+            <RadioGroupItem value="mixed" id="mixed" name="payment-type" />
             <Label htmlFor="mixed">Mixto</Label>
           </div>
         </RadioGroup>
