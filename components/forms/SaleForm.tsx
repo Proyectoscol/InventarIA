@@ -201,6 +201,15 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
       // Calcular total
       const calculatedTotal = data.unitPrice * data.quantity
       
+      // LOGS DE DEBUG
+      console.log("=== FORMULARIO ENVIADO ===")
+      console.log("paymentType del form:", data.paymentType)
+      console.log("paymentType tipo:", typeof data.paymentType)
+      console.log("cashAmount del form:", data.cashAmount)
+      console.log("creditAmount del form:", data.creditAmount)
+      console.log("creditDays del form:", data.creditDays)
+      console.log("total calculado:", calculatedTotal)
+      
       // Preparar datos según el tipo de pago
       let finalCashAmount: number | undefined = undefined
       let finalCreditAmount: number | undefined = undefined
@@ -216,17 +225,21 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         finalCreditAmount = data.creditAmount || 0
       }
       
+      const payload = {
+        ...data,
+        companyId,
+        customerId: data.customerId && data.customerId.trim() !== "" ? data.customerId : null,
+        cashAmount: finalCashAmount,
+        creditAmount: finalCreditAmount,
+        creditDays: data.paymentType === "credit" || data.paymentType === "mixed" ? data.creditDays : undefined
+      }
+      
+      console.log("Payload final:", JSON.stringify(payload, null, 2))
+      
       const res = await fetch("/api/movements/sale", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...data,
-          companyId,
-          customerId: data.customerId && data.customerId.trim() !== "" ? data.customerId : null,
-          cashAmount: finalCashAmount,
-          creditAmount: finalCreditAmount,
-          creditDays: data.paymentType === "credit" || data.paymentType === "mixed" ? data.creditDays : undefined
-        })
+        body: JSON.stringify(payload)
       })
 
       if (!res.ok) {
@@ -435,63 +448,85 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
       {/* Tipo de Pago */}
       <div>
         <Label>Tipo de Pago</Label>
-        <RadioGroup
-          value={paymentType || "cash"}
-          onValueChange={(val) => {
-            console.log("RadioGroup onValueChange:", val) // Debug
-            setValue("paymentType", val as any, { shouldValidate: true })
-            // Resetear valores cuando cambia el tipo de pago
-            if (val === "cash") {
-              setValue("cashAmount", undefined)
-              setValue("creditAmount", undefined)
-              setValue("creditDays", undefined)
-            } else if (val === "credit") {
-              setValue("cashAmount", undefined)
-              setValue("creditAmount", total > 0 ? total : 0)
-              // Inicializar días de crédito si no están definidos
-              const currentDays = watch("creditDays")
-              if (!currentDays) {
-                setValue("creditDays", 15, { shouldValidate: true })
-                setCreditDaysType("preset")
-              }
-            } else if (val === "mixed") {
-              // Mantener valores si ya existen, sino dividir en partes iguales
-              const currentCash = watch("cashAmount")
-              const currentCredit = watch("creditAmount")
-              if ((!currentCash || currentCash === 0) && (!currentCredit || currentCredit === 0)) {
-                const half = total > 0 ? total / 2 : 0
-                setValue("cashAmount", half, { shouldValidate: true })
-                setValue("creditAmount", half, { shouldValidate: true })
-              }
-              // Inicializar días de crédito si no están definidos
-              const currentDays = watch("creditDays")
-              if (!currentDays) {
-                setValue("creditDays", 15, { shouldValidate: true })
-                setCreditDaysType("preset")
-              }
-            }
-          }}
-        >
+        <div className="space-y-2">
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="cash" id="payment-cash" name="payment-type" />
+            <input
+              type="radio"
+              id="payment-cash"
+              name="payment-type"
+              value="cash"
+              checked={paymentType === "cash"}
+              onChange={(e) => {
+                console.log("Radio clicked: cash")
+                setValue("paymentType", "cash", { shouldValidate: true })
+                setValue("cashAmount", undefined)
+                setValue("creditAmount", undefined)
+                setValue("creditDays", undefined)
+              }}
+              className="h-4 w-4"
+            />
             <Label htmlFor="payment-cash" className="cursor-pointer">Contado</Label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="credit" id="payment-credit" name="payment-type" />
+            <input
+              type="radio"
+              id="payment-credit"
+              name="payment-type"
+              value="credit"
+              checked={paymentType === "credit"}
+              onChange={(e) => {
+                console.log("Radio clicked: credit")
+                setValue("paymentType", "credit", { shouldValidate: true })
+                setValue("cashAmount", undefined)
+                setValue("creditAmount", total > 0 ? total : 0)
+                const currentDays = watch("creditDays")
+                if (!currentDays) {
+                  setValue("creditDays", 15, { shouldValidate: true })
+                  setCreditDaysType("preset")
+                }
+              }}
+              className="h-4 w-4"
+            />
             <Label htmlFor="payment-credit" className="cursor-pointer">Crédito</Label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="mixed" id="payment-mixed" name="payment-type" />
+            <input
+              type="radio"
+              id="payment-mixed"
+              name="payment-type"
+              value="mixed"
+              checked={paymentType === "mixed"}
+              onChange={(e) => {
+                console.log("Radio clicked: mixed")
+                setValue("paymentType", "mixed", { shouldValidate: true })
+                const currentCash = watch("cashAmount")
+                const currentCredit = watch("creditAmount")
+                if ((!currentCash || currentCash === 0) && (!currentCredit || currentCredit === 0)) {
+                  const half = total > 0 ? total / 2 : 0
+                  setValue("cashAmount", half, { shouldValidate: true })
+                  setValue("creditAmount", half, { shouldValidate: true })
+                }
+                const currentDays = watch("creditDays")
+                if (!currentDays) {
+                  setValue("creditDays", 15, { shouldValidate: true })
+                  setCreditDaysType("preset")
+                }
+              }}
+              className="h-4 w-4"
+            />
             <Label htmlFor="payment-mixed" className="cursor-pointer">Mixto</Label>
           </div>
-        </RadioGroup>
+        </div>
 
-        {/* Debug temporal - remover después */}
-        {process.env.NODE_ENV === "development" && (
-          <div className="mt-2 text-xs text-gray-500">
-            Debug: paymentType = {paymentType || "undefined"}
-          </div>
-        )}
+        {/* Debug - siempre visible para troubleshooting */}
+        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+          <strong>Debug:</strong> paymentType = <span className="font-mono">{String(paymentType || "undefined")}</span>
+          {paymentType && (
+            <span className="ml-2">
+              (tipo: {typeof paymentType})
+            </span>
+          )}
+        </div>
 
         {/* Campos para crédito */}
         {(paymentType === "credit" || paymentType === "mixed") && (
@@ -757,4 +792,5 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
     </>
   )
 }
+
 
