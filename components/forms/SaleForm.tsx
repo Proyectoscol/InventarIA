@@ -167,6 +167,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Selección de Bodega */}
       <div>
@@ -311,75 +312,6 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         </Select>
       </div>
 
-      {/* Modal para crear cliente */}
-      {showCreateCustomer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Crear Nuevo Cliente</CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowCreateCustomer(false)}
-                >
-                  ✕
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <CustomerForm
-                companyId={companyId}
-                onSuccess={(newCustomer) => {
-                  if (newCustomer) {
-                    const updatedCustomers = [...customers, newCustomer]
-                    setCustomers(updatedCustomers)
-                    setValue("customerId", newCustomer.id)
-                    onCustomerCreated?.(newCustomer)
-                    setShowCreateCustomer(false)
-                  }
-                }}
-                onCancel={() => setShowCreateCustomer(false)}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Modal para creación rápida de producto */}
-      {showQuickProductCreation && (
-        <QuickProductCreationModal
-          companyId={companyId}
-          warehouses={warehouses}
-          initialProductName={quickProductName}
-          onSuccess={async (productId) => {
-            setShowQuickProductCreation(false)
-            // Recargar el producto para obtener todos sus datos
-            try {
-              const res = await fetch(`/api/companies/${companyId}/products`)
-              if (res.ok) {
-                const products = await res.json()
-                const newProduct = products.find((p: any) => p.id === productId)
-                if (newProduct) {
-                  setSelectedProduct(newProduct)
-                  setValue("productId", newProduct.id)
-                  toast.success("✅ Producto listo para vender", {
-                    description: `"${newProduct.name}" está disponible en inventario`,
-                    duration: 3000
-                  })
-                }
-              }
-            } catch (error) {
-              console.error("Error cargando producto:", error)
-            }
-          }}
-          onCancel={() => {
-            setShowQuickProductCreation(false)
-            setQuickProductName("")
-          }}
-        />
-      )}
-
       {/* Tipo de Pago */}
       <div>
         <Label>Tipo de Pago</Label>
@@ -488,6 +420,76 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         </Button>
       </div>
     </form>
+
+    {/* Modales renderizados fuera del formulario para evitar conflictos */}
+    {showCreateCustomer && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Crear Nuevo Cliente</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCreateCustomer(false)}
+              >
+                ✕
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <CustomerForm
+              companyId={companyId}
+              onSuccess={(newCustomer) => {
+                if (newCustomer) {
+                  const updatedCustomers = [...customers, newCustomer]
+                  setCustomers(updatedCustomers)
+                  setValue("customerId", newCustomer.id)
+                  onCustomerCreated?.(newCustomer)
+                  setShowCreateCustomer(false)
+                }
+              }}
+              onCancel={() => setShowCreateCustomer(false)}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    )}
+
+    {/* Modal para creación rápida de producto */}
+    {showQuickProductCreation && (
+      <QuickProductCreationModal
+        companyId={companyId}
+        warehouses={warehouses}
+        initialProductName={quickProductName}
+        onSuccess={async (productId) => {
+          setShowQuickProductCreation(false)
+          // Recargar el producto para obtener todos sus datos
+          try {
+            const res = await fetch(`/api/companies/${companyId}/products`)
+            if (res.ok) {
+              const products = await res.json()
+              const newProduct = products.find((p: any) => p.id === productId)
+              if (newProduct) {
+                setSelectedProduct(newProduct)
+                setValue("productId", newProduct.id)
+                toast.success("✅ Producto listo para vender", {
+                  description: `"${newProduct.name}" está disponible en inventario`,
+                  duration: 3000
+                })
+              }
+            }
+          } catch (error) {
+            console.error("Error cargando producto:", error)
+          }
+        }}
+        onCancel={() => {
+          setShowQuickProductCreation(false)
+          setQuickProductName("")
+        }}
+      />
+    )}
+    </>
   )
 }
 
