@@ -5,12 +5,15 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BackButton } from "@/components/shared/BackButton"
+import { MovementCalendar } from "@/components/calendar/MovementCalendar"
+import { DayDetailsModal } from "@/components/calendar/DayDetailsModal"
 
 export default function StatsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [stats, setStats] = useState<any>(null)
   const [companyId, setCompanyId] = useState<string>("")
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -118,7 +121,26 @@ export default function StatsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Calendario de Movimientos */}
+        {companyId && (
+          <div className="mb-8">
+            <MovementCalendar
+              companyId={companyId}
+              onDateSelect={(date) => setSelectedDate(date)}
+            />
+          </div>
+        )}
         </div>
+
+        {/* Modal de detalles del día */}
+        {selectedDate && companyId && (
+          <DayDetailsModal
+            date={selectedDate}
+            companyId={companyId}
+            onClose={() => setSelectedDate(null)}
+          />
+        )}
     </div>
   )
 }
