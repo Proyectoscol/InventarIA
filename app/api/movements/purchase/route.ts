@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { getColombiaNow } from "@/lib/date-utils"
 
 export async function POST(req: NextRequest) {
   try {

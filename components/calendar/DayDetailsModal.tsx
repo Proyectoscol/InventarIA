@@ -45,7 +45,11 @@ export function DayDetailsModal({ date, companyId, onClose }: DayDetailsModalPro
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })
+    return date.toLocaleTimeString("es-CO", { 
+      hour: "2-digit", 
+      minute: "2-digit",
+      timeZone: "America/Bogota"
+    })
   }
 
   const formatDate = (date: Date) => {
@@ -53,7 +57,8 @@ export function DayDetailsModal({ date, companyId, onClose }: DayDetailsModalPro
       weekday: "long",
       year: "numeric",
       month: "long",
-      day: "numeric"
+      day: "numeric",
+      timeZone: "America/Bogota"
     })
   }
 

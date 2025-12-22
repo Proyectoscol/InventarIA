@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { getColombiaDay } from "@/lib/date-utils"
 
 export async function GET(req: NextRequest) {
   try {
@@ -38,11 +39,10 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    // Agrupar por día
+    // Agrupar por día en zona horaria de Colombia
     const daysWithActivity = new Set<string>()
     movements.forEach(m => {
-      const date = new Date(m.movementDate)
-      const day = date.getDate()
+      const day = getColombiaDay(m.movementDate)
       daysWithActivity.add(day.toString())
     })
 

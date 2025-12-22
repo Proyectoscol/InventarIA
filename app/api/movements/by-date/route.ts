@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { getColombiaDayRange } from "@/lib/date-utils"
 
 export async function GET(req: NextRequest) {
   try {
@@ -18,11 +19,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "companyId y date requeridos" }, { status: 400 })
     }
 
-    // Crear rango del día (00:00:00 a 23:59:59)
-    const startDate = new Date(date)
-    startDate.setHours(0, 0, 0, 0)
-    const endDate = new Date(date)
-    endDate.setHours(23, 59, 59, 999)
+    // Crear rango del día en zona horaria de Colombia (00:00:00 a 23:59:59)
+    const { start: startDate, end: endDate } = getColombiaDayRange(date)
 
     // Obtener movimientos del día
     const movements = await prisma.movement.findMany({
