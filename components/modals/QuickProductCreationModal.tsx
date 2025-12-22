@@ -82,7 +82,10 @@ export function QuickProductCreationModal({
   const unitPrice = priceType === "unit" ? price : (quantity > 0 ? price / quantity : 0)
 
   // Paso 1: Crear producto
-  const onProductSubmit = async (data: ProductFormData) => {
+  const onProductSubmit = async (data: ProductFormData, e?: React.BaseSyntheticEvent) => {
+    e?.preventDefault()
+    e?.stopPropagation()
+    
     setLoading(true)
     try {
       const res = await fetch("/api/products", {
@@ -194,7 +197,14 @@ export function QuickProductCreationModal({
         </CardHeader>
         <CardContent className="p-6">
           {step === 1 ? (
-            <form onSubmit={productForm.handleSubmit(onProductSubmit)} className="space-y-6">
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                productForm.handleSubmit(onProductSubmit)(e)
+              }} 
+              className="space-y-6"
+            >
               <div>
                 <Label htmlFor="name" className="text-base">Nombre del Producto *</Label>
                 <Input
@@ -256,7 +266,14 @@ export function QuickProductCreationModal({
               </div>
             </form>
           ) : (
-            <form onSubmit={purchaseForm.handleSubmit(onPurchaseSubmit)} className="space-y-6">
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                purchaseForm.handleSubmit(onPurchaseSubmit)(e)
+              }} 
+              className="space-y-6"
+            >
               <div>
                 <Label className="text-base">Bodega *</Label>
                 <Select {...purchaseForm.register("warehouseId")}>
