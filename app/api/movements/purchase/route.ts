@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
         }
       })
       
-      // Crear movimiento
+      // Crear movimiento con fecha en zona horaria de Colombia
       const movement = await tx.movement.create({
         data: {
           movementNumber: batchNumber,
@@ -75,7 +75,8 @@ export async function POST(req: NextRequest) {
           cashAmount: data.cashAmount,
           creditAmount: data.creditAmount,
           creditPaid: data.paymentType === "cash",
-          notes: data.notes
+          notes: data.notes,
+          movementDate: data.movementDate ? new Date(data.movementDate) : getColombiaNow()
         }
       })
       
