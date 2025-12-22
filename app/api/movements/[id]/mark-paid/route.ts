@@ -38,7 +38,8 @@ export async function POST(
       return NextResponse.json({ error: "Este movimiento ya fue pagado en contado" }, { status: 400 })
     }
 
-    if (!movement.creditAmount || movement.creditAmount <= 0) {
+    const creditAmountNum = movement.creditAmount ? Number(movement.creditAmount) : 0
+    if (creditAmountNum <= 0) {
       return NextResponse.json({ error: "Este movimiento no tiene crédito pendiente" }, { status: 400 })
     }
 

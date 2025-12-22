@@ -234,7 +234,8 @@ export async function POST(req: NextRequest) {
     }
     
     // Si hay crédito, verificar créditos vencidos después de un delay
-    if (result.creditAmount && result.creditAmount > 0 && result.creditDueDate) {
+    const creditAmountNum = result.creditAmount ? Number(result.creditAmount) : 0
+    if (creditAmountNum > 0 && result.creditDueDate) {
       setTimeout(async () => {
         try {
           await checkAndSendCreditAlert(data.companyId)
