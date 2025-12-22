@@ -131,6 +131,39 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
             setSelectedProduct(product)
             setValue("productId", product.id)
           }}
+          onCreateNew={async (name) => {
+            try {
+              const res = await fetch("/api/products", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  name: name.trim(),
+                  companyId,
+                  minStockThreshold: 10
+                })
+              })
+
+              if (!res.ok) {
+                const error = await res.json()
+                throw new Error(error.error || "Error al crear producto")
+              }
+
+              const newProduct = await res.json()
+              toast.success("✅ Producto creado exitosamente", {
+                description: `El producto "${newProduct.name}" se ha agregado y seleccionado`,
+                duration: 3000
+              })
+              
+              // Seleccionar el nuevo producto automáticamente
+              setSelectedProduct(newProduct)
+              setValue("productId", newProduct.id)
+            } catch (error: any) {
+              toast.error("❌ Error al crear producto", {
+                description: error.message || "Por favor, intenta nuevamente",
+                duration: 4000
+              })
+            }
+          }}
         />
         {selectedProduct && (
           <div className="mt-2 p-2 bg-muted rounded-md text-sm">

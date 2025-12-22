@@ -36,38 +36,39 @@ export function ProductSearch({
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Cargar todos los productos al montar el componente
-  useEffect(() => {
-    const fetchAllProducts = async () => {
-      setLoading(true)
-      try {
-        const res = await fetch(`/api/companies/${companyId}/products`)
-        if (res.ok) {
-          const data = await res.json()
-          // Ordenar alfabéticamente
-          const sorted = data.sort((a: Product, b: Product) => 
-            a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
-          )
-          setAllProducts(sorted)
-          setFilteredProducts(sorted)
-          
-          // Si hay un producto pre-seleccionado, seleccionarlo automáticamente
-          if (preselectedProductId) {
-            const preselected = sorted.find((p: Product) => p.id === preselectedProductId)
-            if (preselected) {
-              setSelectedProduct(preselected)
-              setSearch(preselected.name)
-              onSelect(preselected)
-            }
+  // Función para recargar productos
+  const fetchAllProducts = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/companies/${companyId}/products`)
+      if (res.ok) {
+        const data = await res.json()
+        // Ordenar alfabéticamente
+        const sorted = data.sort((a: Product, b: Product) => 
+          a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+        )
+        setAllProducts(sorted)
+        setFilteredProducts(sorted)
+        
+        // Si hay un producto pre-seleccionado, seleccionarlo automáticamente
+        if (preselectedProductId) {
+          const preselected = sorted.find((p: Product) => p.id === preselectedProductId)
+          if (preselected) {
+            setSelectedProduct(preselected)
+            setSearch(preselected.name)
+            onSelect(preselected)
           }
         }
-      } catch (error) {
-        console.error("Error cargando productos:", error)
-      } finally {
-        setLoading(false)
       }
+    } catch (error) {
+      console.error("Error cargando productos:", error)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  // Cargar todos los productos al montar el componente
+  useEffect(() => {
     if (companyId) {
       fetchAllProducts()
     }
@@ -106,12 +107,20 @@ export function ProductSearch({
     setShowResults(false)
   }
 
-  const handleCreateNew = () => {
+  const handleCreateNew = async () => {
     if (onCreateNew && search.trim()) {
-      onCreateNew(search.trim())
-      setSearch("")
-      setShowResults(false)
-      setSelectedProduct(null)
+      setLoading(true)
+      try {
+        await onCreateNew(search.trim())
+        // Recargar la lista de productos para incluir el nuevo
+        await fetchAllProducts()
+        // No limpiar el search ni cerrar resultados aquí
+        // El componente padre manejará la selección del nuevo producto
+      } catch (error) {
+        console.error("Error creando producto:", error)
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
