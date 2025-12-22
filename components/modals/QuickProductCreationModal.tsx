@@ -287,15 +287,14 @@ export function QuickProductCreationModal({
                 <RadioGroup
                   value={priceType}
                   onValueChange={(val) => purchaseForm.setValue("priceType", val as any)}
-                  name="purchase-price-type"
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="unit" id="unit" />
-                    <Label htmlFor="unit" className="text-base font-normal cursor-pointer">Precio Unitario</Label>
+                    <RadioGroupItem value="unit" id="purchase-unit" name="purchase-price-type" />
+                    <Label htmlFor="purchase-unit" className="text-base font-normal cursor-pointer">Precio Unitario</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="total" id="total" />
-                    <Label htmlFor="total" className="text-base font-normal cursor-pointer">Precio Total</Label>
+                    <RadioGroupItem value="total" id="purchase-total" name="purchase-price-type" />
+                    <Label htmlFor="purchase-total" className="text-base font-normal cursor-pointer">Precio Total</Label>
                   </div>
                 </RadioGroup>
               </div>
@@ -323,19 +322,18 @@ export function QuickProductCreationModal({
                 <RadioGroup
                   value={purchaseForm.watch("paymentType")}
                   onValueChange={(val) => purchaseForm.setValue("paymentType", val as any)}
-                  name="purchase-payment-type"
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="cash" id="cash" />
-                    <Label htmlFor="cash" className="text-base font-normal cursor-pointer">Efectivo</Label>
+                    <RadioGroupItem value="cash" id="purchase-cash" name="purchase-payment-type" />
+                    <Label htmlFor="purchase-cash" className="text-base font-normal cursor-pointer">Efectivo</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="credit" id="credit" />
-                    <Label htmlFor="credit" className="text-base font-normal cursor-pointer">Crédito</Label>
+                    <RadioGroupItem value="credit" id="purchase-credit" name="purchase-payment-type" />
+                    <Label htmlFor="purchase-credit" className="text-base font-normal cursor-pointer">Crédito</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="mixed" id="mixed" />
-                    <Label htmlFor="mixed" className="text-base font-normal cursor-pointer">Mixto</Label>
+                    <RadioGroupItem value="mixed" id="purchase-mixed" name="purchase-payment-type" />
+                    <Label htmlFor="purchase-mixed" className="text-base font-normal cursor-pointer">Mixto</Label>
                   </div>
                 </RadioGroup>
 
