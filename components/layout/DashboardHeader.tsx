@@ -14,7 +14,8 @@ import {
   LogOut,
   Menu,
   X,
-  User
+  User,
+  DollarSign
 } from "lucide-react"
 import { useState } from "react"
 
@@ -30,6 +31,7 @@ export function DashboardHeader() {
     { name: "Nueva Venta", href: "/dashboard/movements/sale", icon: ShoppingCart },
     { name: "Nueva Compra", href: "/dashboard/movements/purchase", icon: ShoppingCart },
     { name: "Estadísticas", href: "/dashboard/stats", icon: TrendingUp },
+    { name: "Créditos", href: "/dashboard/credits", icon: DollarSign },
     { name: "Bodegas", href: "/dashboard/settings/warehouses", icon: Warehouse },
     { name: "Clientes", href: "/dashboard/settings/customers", icon: User },
     { name: "Configuración", href: "/dashboard/settings/companies", icon: Settings },
