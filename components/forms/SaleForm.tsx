@@ -54,6 +54,8 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
   const [loading, setLoading] = useState(false)
   const [showCreateCustomer, setShowCreateCustomer] = useState(false)
   const [customers, setCustomers] = useState(initialCustomers)
+  const [lastSalePrice, setLastSalePrice] = useState<number | null>(null)
+  const [priceInputType, setPriceInputType] = useState<"unit" | "total">("unit")
   
   // Actualizar lista de clientes cuando cambia el prop
   useEffect(() => {
@@ -169,17 +171,70 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         )}
       </div>
 
-      {/* Precio Unitario */}
+      {/* Precio de Venta */}
       <div>
-        <Label>Precio de Venta (COP)</Label>
-        <Input
-          type="number"
-          step="0.01"
-          {...register("unitPrice", { valueAsNumber: true })}
-          placeholder="0"
-        />
+        <div className="flex justify-between items-center mb-2">
+          <Label>Precio de Venta (COP)</Label>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center space-x-2">
+              <input
+                type="radio"
+                id="price-unit"
+                checked={priceInputType === "unit"}
+                onChange={() => setPriceInputType("unit")}
+                className="h-4 w-4"
+              />
+              <Label htmlFor="price-unit" className="text-sm font-normal cursor-pointer">
+                Unitario
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="radio"
+                id="price-total"
+                checked={priceInputType === "total"}
+                onChange={() => setPriceInputType("total")}
+                className="h-4 w-4"
+              />
+              <Label htmlFor="price-total" className="text-sm font-normal cursor-pointer">
+                Total
+              </Label>
+            </div>
+          </div>
+        </div>
+        
+        {lastSalePrice && (
+          <p className="text-sm text-muted-foreground mb-2">
+            💡 Último precio de venta: <span className="font-semibold">${lastSalePrice.toLocaleString("es-CO")} COP</span> (por unidad)
+          </p>
+        )}
+
+        {priceInputType === "unit" ? (
+          <Input
+            type="number"
+            step="0.01"
+            {...register("unitPrice", { valueAsNumber: true })}
+            placeholder={lastSalePrice ? lastSalePrice.toString() : "0"}
+          />
+        ) : (
+          <Input
+            type="number"
+            step="0.01"
+            placeholder="0"
+            onChange={(e) => {
+              const totalValue = parseFloat(e.target.value) || 0
+              handleTotalPriceChange(totalValue)
+            }}
+            value={total || ""}
+          />
+        )}
+        
         <p className="text-sm text-muted-foreground mt-1">
-          Total: ${total.toLocaleString("es-CO")} COP
+          {priceInputType === "unit" ? (
+            <>Total: <span className="font-semibold">${total.toLocaleString("es-CO")} COP</span></>
+          ) : (
+            <>Precio unitario: <span className="font-semibold">${(unitPrice || 0).toLocaleString("es-CO")} COP</span></>
+          )}
         </p>
         {errors.unitPrice && (
           <p className="text-sm text-red-500">{errors.unitPrice.message}</p>
