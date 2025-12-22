@@ -56,6 +56,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
   const [customers, setCustomers] = useState(initialCustomers)
   const [lastSalePrice, setLastSalePrice] = useState<number | null>(null)
   const [priceInputType, setPriceInputType] = useState<"unit" | "total">("unit")
+  const [totalPriceInput, setTotalPriceInput] = useState<string>("")
   
   // Actualizar lista de clientes cuando cambia el prop
   useEffect(() => {
@@ -80,8 +81,53 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
   const hasShipping = watch("hasShipping")
   const quantity = watch("quantity")
   const unitPrice = watch("unitPrice")
+  const productId = watch("productId")
+  const [totalPriceInput, setTotalPriceInput] = useState<string>("")
 
   const total = (quantity || 0) * (unitPrice || 0)
+
+  // Obtener último precio de venta cuando se selecciona un producto
+  useEffect(() => {
+    if (productId) {
+      fetch(`/api/products/${productId}/last-sale-price`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.lastPrice) {
+            setLastSalePrice(data.lastPrice)
+            // Solo sugerir el último precio si no hay precio ingresado
+            const currentPrice = watch("unitPrice")
+            if (!currentPrice || currentPrice === 0) {
+              setValue("unitPrice", data.lastPrice)
+            }
+          } else {
+            setLastSalePrice(null)
+          }
+        })
+        .catch(err => {
+          console.error("Error obteniendo último precio:", err)
+          setLastSalePrice(null)
+        })
+    } else {
+      setLastSalePrice(null)
+    }
+  }, [productId, setValue])
+
+  // Actualizar precio unitario cuando cambia el precio total
+  useEffect(() => {
+    if (priceInputType === "total" && totalPriceInput && quantity && quantity > 0) {
+      const totalValue = parseFloat(totalPriceInput) || 0
+      const calculatedUnitPrice = totalValue / quantity
+      setValue("unitPrice", calculatedUnitPrice, { shouldValidate: true })
+    }
+  }, [totalPriceInput, quantity, priceInputType, setValue])
+
+  // Actualizar input total cuando cambia el precio unitario (modo unitario)
+  useEffect(() => {
+    if (priceInputType === "unit" && unitPrice) {
+      const calculatedTotal = (unitPrice || 0) * (quantity || 0)
+      setTotalPriceInput(calculatedTotal.toString())
+    }
+  }, [unitPrice, quantity, priceInputType])
 
   const onSubmit = async (data: SaleFormData) => {
     setLoading(true)
