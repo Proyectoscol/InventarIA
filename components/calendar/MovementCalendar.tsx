@@ -62,7 +62,10 @@ export function MovementCalendar({ companyId, onDateSelect }: MovementCalendarPr
   }
 
   const handleDateClick = (day: number) => {
+    // Crear fecha en zona horaria local, pero representando el día en Colombia
     const selectedDate = new Date(year, month, day)
+    // Ajustar para que represente el día correcto en Colombia
+    selectedDate.setHours(12, 0, 0, 0) // Usar mediodía para evitar problemas de zona horaria
     onDateSelect(selectedDate)
   }
 

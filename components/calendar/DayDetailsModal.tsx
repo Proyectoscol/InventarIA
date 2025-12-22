@@ -27,7 +27,13 @@ export function DayDetailsModal({ date, companyId, onClose }: DayDetailsModalPro
     
     setLoading(true)
     try {
-      const dateStr = date.toISOString().split("T")[0]
+      // Convertir la fecha seleccionada a formato YYYY-MM-DD en zona horaria de Colombia
+      const dateStr = date.toLocaleDateString("en-CA", { 
+        timeZone: "America/Bogota",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      })
       const res = await fetch(
         `/api/movements/by-date?companyId=${companyId}&date=${dateStr}`
       )
