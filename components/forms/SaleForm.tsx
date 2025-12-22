@@ -71,6 +71,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
   const [totalPriceInput, setTotalPriceInput] = useState<string>("")
   const [creditDaysType, setCreditDaysType] = useState<"preset" | "custom">("preset")
   const [customCreditDays, setCustomCreditDays] = useState<string>("")
+  const [stockInfo, setStockInfo] = useState<{ quantity: number; isLowStock: boolean } | null>(null)
   
   // Actualizar lista de clientes cuando cambia el prop
   useEffect(() => {
@@ -96,9 +97,34 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
   const quantity = watch("quantity")
   const unitPrice = watch("unitPrice")
   const productId = watch("productId")
+  const warehouseId = watch("warehouseId")
   const creditDays = watch("creditDays")
 
   const total = (quantity || 0) * (unitPrice || 0)
+
+  // Obtener stock cuando se selecciona producto y bodega
+  useEffect(() => {
+    if (productId && warehouseId) {
+      fetch(`/api/products/${productId}/stock?warehouseId=${warehouseId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.quantity !== undefined) {
+            setStockInfo({
+              quantity: data.quantity,
+              isLowStock: data.isLowStock || false
+            })
+          } else {
+            setStockInfo(null)
+          }
+        })
+        .catch(err => {
+          console.error("Error obteniendo stock:", err)
+          setStockInfo(null)
+        })
+    } else {
+      setStockInfo(null)
+    }
+  }, [productId, warehouseId])
 
   // Actualizar creditAmount cuando es crédito puro y asegurar que creditDays esté definido
   useEffect(() => {
@@ -262,6 +288,40 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
             ✓ {selectedProduct.name}
           </div>
         )}
+        {stockInfo !== null && warehouseId && (
+          <div className={`mt-2 p-3 rounded-md text-sm ${
+            stockInfo.isLowStock 
+              ? "bg-orange-50 border border-orange-200" 
+              : stockInfo.quantity === 0
+              ? "bg-red-50 border border-red-200"
+              : "bg-blue-50 border border-blue-200"
+          }`}>
+            <div className="flex items-center justify-between">
+              <span className="font-medium">
+                {stockInfo.isLowStock ? "⚠️ Stock bajo" : stockInfo.quantity === 0 ? "❌ Sin stock" : "📦 Stock disponible"}
+              </span>
+              <span className={`font-bold ${
+                stockInfo.isLowStock 
+                  ? "text-orange-700" 
+                  : stockInfo.quantity === 0
+                  ? "text-red-700"
+                  : "text-blue-700"
+              }`}>
+                {stockInfo.quantity} unidades
+              </span>
+            </div>
+            {stockInfo.quantity > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Puedes vender hasta {stockInfo.quantity} unidades
+              </p>
+            )}
+            {stockInfo.quantity === 0 && (
+              <p className="text-xs text-red-600 mt-1 font-medium">
+                No hay stock disponible en esta bodega
+              </p>
+            )}
+          </div>
+        )}
         {errors.productId && (
           <p className="text-sm text-red-500">{errors.productId.message}</p>
         )}
@@ -423,6 +483,13 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
             <Label htmlFor="mixed">Mixto</Label>
           </div>
         </RadioGroup>
+
+        {/* Debug temporal - remover después */}
+        {process.env.NODE_ENV === "development" && (
+          <div className="mt-2 text-xs text-gray-500">
+            Debug: paymentType = {paymentType || "undefined"}
+          </div>
+        )}
 
         {/* Campos para crédito */}
         {(paymentType === "credit" || paymentType === "mixed") && (
