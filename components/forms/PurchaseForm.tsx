@@ -149,11 +149,11 @@ export function PurchaseForm({ companyId, warehouses, onSuccess, onCancel }: Pur
           onValueChange={(val) => setValue("priceType", val as any)}
         >
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="unit" id="unit" />
+            <RadioGroupItem value="unit" id="unit" name="purchase-price-type" />
             <Label htmlFor="unit">Precio Unitario</Label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="total" id="total" />
+            <RadioGroupItem value="total" id="total" name="purchase-price-type" />
             <Label htmlFor="total">Precio Total</Label>
           </div>
         </RadioGroup>
@@ -184,15 +184,15 @@ export function PurchaseForm({ companyId, warehouses, onSuccess, onCancel }: Pur
           onValueChange={(val) => setValue("paymentType", val as any)}
         >
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="cash" id="cash" />
+            <RadioGroupItem value="cash" id="cash" name="purchase-payment-type" />
             <Label htmlFor="cash">Efectivo</Label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="credit" id="credit" />
+            <RadioGroupItem value="credit" id="credit" name="purchase-payment-type" />
             <Label htmlFor="credit">Crédito</Label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="mixed" id="mixed" />
+            <RadioGroupItem value="mixed" id="mixed" name="purchase-payment-type" />
             <Label htmlFor="mixed">Mixto</Label>
           </div>
         </RadioGroup>
