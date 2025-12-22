@@ -39,13 +39,17 @@ export interface RadioGroupItemProps
 }
 
 const RadioGroupItem = React.forwardRef<HTMLInputElement, RadioGroupItemProps>(
-  ({ className, value, checked, onCheckedChange, id, ...props }, ref) => {
+  ({ className, value, checked, onCheckedChange, id, name, ...props }, ref) => {
+    // Generar un name único basado en el contexto del RadioGroup si no se proporciona
+    const radioName = name || `radio-group-${value}`
+    
     return (
       <div className="flex items-center space-x-2">
         <input
           type="radio"
           ref={ref}
           id={id || value}
+          name={radioName}
           value={value}
           checked={checked}
           onChange={onCheckedChange}

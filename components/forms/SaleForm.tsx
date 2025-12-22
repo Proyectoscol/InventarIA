@@ -224,6 +224,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
               <input
                 type="radio"
                 id="price-unit"
+                name="price-input-type"
                 checked={priceInputType === "unit"}
                 onChange={() => setPriceInputType("unit")}
                 className="h-4 w-4"
@@ -236,6 +237,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
               <input
                 type="radio"
                 id="price-total"
+                name="price-input-type"
                 checked={priceInputType === "total"}
                 onChange={() => setPriceInputType("total")}
                 className="h-4 w-4"
@@ -405,15 +407,15 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
               />
             </div>
             <RadioGroup
-              defaultValue="customer"
+              value={watch("shippingPaidBy") || "customer"}
               onValueChange={(val) => setValue("shippingPaidBy", val as any)}
             >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="customer" id="customer" />
+                <RadioGroupItem value="customer" id="customer" name="shipping-paid-by" />
                 <Label htmlFor="customer">Lo paga el cliente</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="seller" id="seller" />
+                <RadioGroupItem value="seller" id="seller" name="shipping-paid-by" />
                 <Label htmlFor="seller">Lo asumo yo</Label>
               </div>
             </RadioGroup>
