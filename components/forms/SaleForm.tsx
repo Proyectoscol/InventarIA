@@ -346,6 +346,40 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         </div>
       )}
 
+      {/* Modal para creación rápida de producto */}
+      {showQuickProductCreation && (
+        <QuickProductCreationModal
+          companyId={companyId}
+          warehouses={warehouses}
+          initialProductName={quickProductName}
+          onSuccess={async (productId) => {
+            setShowQuickProductCreation(false)
+            // Recargar el producto para obtener todos sus datos
+            try {
+              const res = await fetch(`/api/companies/${companyId}/products`)
+              if (res.ok) {
+                const products = await res.json()
+                const newProduct = products.find((p: any) => p.id === productId)
+                if (newProduct) {
+                  setSelectedProduct(newProduct)
+                  setValue("productId", newProduct.id)
+                  toast.success("✅ Producto listo para vender", {
+                    description: `"${newProduct.name}" está disponible en inventario`,
+                    duration: 3000
+                  })
+                }
+              }
+            } catch (error) {
+              console.error("Error cargando producto:", error)
+            }
+          }}
+          onCancel={() => {
+            setShowQuickProductCreation(false)
+            setQuickProductName("")
+          }}
+        />
+      )}
+
       {/* Tipo de Pago */}
       <div>
         <Label>Tipo de Pago</Label>
