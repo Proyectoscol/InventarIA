@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PlusCircle } from "lucide-react"
-import { useDebounce } from "@/hooks/useDebounce"
 
 interface Product {
   id: string
