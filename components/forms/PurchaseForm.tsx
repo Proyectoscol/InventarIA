@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { purchaseSchema } from "@/lib/validations"
@@ -28,11 +28,13 @@ type PurchaseFormData = {
 interface PurchaseFormProps {
   companyId: string
   warehouses: Array<{ id: string; name: string }>
+  preselectedProductId?: string
+  preselectedWarehouseId?: string
   onSuccess?: () => void
   onCancel?: () => void
 }
 
-export function PurchaseForm({ companyId, warehouses, onSuccess, onCancel }: PurchaseFormProps) {
+export function PurchaseForm({ companyId, warehouses, preselectedProductId, preselectedWarehouseId, onSuccess, onCancel }: PurchaseFormProps) {
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [loading, setLoading] = useState(false)
 
@@ -46,9 +48,27 @@ export function PurchaseForm({ companyId, warehouses, onSuccess, onCancel }: Pur
     resolver: zodResolver(purchaseSchema),
     defaultValues: {
       priceType: "unit",
-      paymentType: "cash"
+      paymentType: "cash",
+      warehouseId: preselectedWarehouseId || "",
+      productId: preselectedProductId || ""
     }
   })
+
+  // Cargar producto pre-seleccionado
+  useEffect(() => {
+    if (preselectedProductId && companyId) {
+      fetch(`/api/companies/${companyId}/products`)
+        .then(res => res.json())
+        .then(data => {
+          const product = data.find((p: any) => p.id === preselectedProductId)
+          if (product) {
+            setSelectedProduct(product)
+            setValue("productId", product.id)
+          }
+        })
+        .catch(err => console.error("Error cargando producto:", err))
+    }
+  }, [preselectedProductId, companyId, setValue])
 
   const priceType = watch("priceType")
   const paymentType = watch("paymentType")

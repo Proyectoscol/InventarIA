@@ -6,16 +6,24 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select } from "@/components/ui/select"
 import { ProductForm } from "@/components/forms/ProductForm"
 import { BackButton } from "@/components/shared/BackButton"
+import { Edit, Package, Calendar, DollarSign, ShoppingCart } from "lucide-react"
+import { toast } from "sonner"
 
 export default function InventoryPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [products, setProducts] = useState<any[]>([])
+  const [warehouses, setWarehouses] = useState<any[]>([])
+  const [companies, setCompanies] = useState<any[]>([])
   const [search, setSearch] = useState("")
   const [companyId, setCompanyId] = useState<string>("")
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>("")
   const [showAddProduct, setShowAddProduct] = useState(false)
+  const [productDetails, setProductDetails] = useState<Record<string, any>>({})
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -29,138 +37,315 @@ export default function InventoryPage() {
         .then(res => res.json())
         .then(data => {
           if (data.length > 0) {
+            setCompanies(data)
             setCompanyId(data[0].id)
-            fetchProducts(data[0].id)
+            fetchWarehouses(data[0].id)
           }
         })
     }
   }, [session])
 
-  const fetchProducts = async (compId: string) => {
+  useEffect(() => {
+    if (companyId && selectedWarehouseId) {
+      fetchProducts(companyId, selectedWarehouseId)
+    }
+  }, [companyId, selectedWarehouseId, search])
+
+  const fetchWarehouses = async (compId: string) => {
+    try {
+      const res = await fetch(`/api/companies/${compId}/warehouses`)
+      if (res.ok) {
+        const data = await res.json()
+        setWarehouses(data)
+        if (data.length > 0 && !selectedWarehouseId) {
+          setSelectedWarehouseId(data[0].id)
+        }
+      }
+    } catch (error) {
+      console.error("Error cargando bodegas:", error)
+    }
+  }
+
+  const fetchProducts = async (compId: string, warehouseId: string) => {
     try {
       const res = await fetch(`/api/companies/${compId}/products?q=${encodeURIComponent(search)}`)
       if (res.ok) {
         const data = await res.json()
-        setProducts(data)
+        // Filtrar productos que tengan stock en la bodega seleccionada
+        const filteredProducts = data.filter((product: any) => 
+          product.stock?.some((s: any) => s.warehouseId === warehouseId)
+        )
+        setProducts(filteredProducts)
+        
+        // Cargar detalles de último pedido para cada producto
+        filteredProducts.forEach((product: any) => {
+          fetchProductDetails(product.id, warehouseId)
+        })
       }
     } catch (error) {
       console.error("Error cargando productos:", error)
     }
   }
 
+  const fetchProductDetails = async (productId: string, warehouseId: string) => {
+    try {
+      const res = await fetch(`/api/products/${productId}/last-purchase?warehouseId=${warehouseId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setProductDetails(prev => ({
+          ...prev,
+          [productId]: data
+        }))
+      }
+    } catch (error) {
+      console.error("Error cargando detalles del producto:", error)
+    }
+  }
+
+  const handleEditProduct = (product: any) => {
+    // TODO: Implementar modal o página de edición
+    toast.info("Funcionalidad de edición próximamente")
+  }
+
+  const handleEditThreshold = (product: any) => {
+    // TODO: Implementar modal para editar umbral mínimo
+    toast.info("Funcionalidad de edición de umbral próximamente")
+  }
+
+  const handleAddStock = (product: any) => {
+    // Redirigir a página de compra con producto y bodega pre-seleccionados
+    router.push(`/dashboard/movements/purchase?productId=${product.id}&warehouseId=${selectedWarehouseId}`)
+  }
+
   if (status === "loading") {
     return <div className="p-8">Cargando...</div>
   }
 
-  return (
-    <div className="p-8">
+  if (!companyId || warehouses.length === 0) {
+    return (
+      <div className="p-8">
         <div className="mb-4">
           <BackButton href="/dashboard" />
         </div>
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Inventario</h1>
-          {companyId && !showAddProduct && (
-            <Button onClick={() => setShowAddProduct(true)}>+ Agregar Producto</Button>
-          )}
-        </div>
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground">
+              Primero necesitas crear una compañía y una bodega para ver el inventario.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
-        {showAddProduct && companyId && (
-          <Card className="mb-6 border-2 border-primary">
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Agregar Nuevo Producto</CardTitle>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setShowAddProduct(false)}
-                >
-                  ✕ Cerrar
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <ProductForm
-                companyId={companyId}
-                onSuccess={() => {
-                  setShowAddProduct(false)
-                  if (companyId) {
-                    fetchProducts(companyId)
-                  }
-                }}
-                onCancel={() => setShowAddProduct(false)}
-              />
-            </CardContent>
-          </Card>
+  return (
+    <div className="p-8">
+      <div className="mb-4">
+        <BackButton href="/dashboard" />
+      </div>
+      
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Inventario</h1>
+        {companyId && !showAddProduct && (
+          <Button onClick={() => setShowAddProduct(true)}>+ Agregar Producto</Button>
         )}
+      </div>
 
-        <div className="mb-6">
-          <Input
-            placeholder="Buscar producto..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
-              if (companyId) {
-                fetchProducts(companyId)
-              }
-            }}
-            className="max-w-md"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {products.map((product) => {
-            const totalStock = product.stock?.reduce((sum: number, s: any) => sum + s.quantity, 0) || 0
-            const isLowStock = totalStock < product.minStockThreshold
-            
-            return (
-              <Card key={product.id} className={`hover:shadow-lg transition-shadow ${isLowStock ? 'border-red-300 bg-red-50' : ''}`}>
-                <CardHeader>
-                  <CardTitle className="text-lg">{product.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {product.imageBase64 && (
-                    <img
-                      src={product.imageBase64}
-                      alt={product.name}
-                      className="w-full h-48 object-cover rounded-md mb-4"
-                    />
-                  )}
-                  <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                    {product.description || "Sin descripción"}
-                  </p>
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-muted-foreground">Stock Total:</span>
-                      <span className={`font-bold ${isLowStock ? 'text-red-600' : 'text-green-600'}`}>
-                        {totalStock} unidades
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-muted-foreground">Umbral mínimo:</span>
-                      <span className="text-sm">{product.minStockThreshold} unidades</span>
-                    </div>
-                    {isLowStock && (
-                      <p className="text-xs text-red-600 font-semibold mt-2">
-                        ⚠️ Stock bajo
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-
-        {products.length === 0 && (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <p className="text-muted-foreground">
-                No hay productos registrados. Crea tu primer producto para comenzar.
+      {/* Selector de Bodega */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Seleccionar Bodega</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="warehouse">Bodega</Label>
+            <Select
+              id="warehouse"
+              value={selectedWarehouseId}
+              onChange={(e) => setSelectedWarehouseId(e.target.value)}
+            >
+              <option value="">Seleccionar bodega...</option>
+              {warehouses.map((warehouse) => (
+                <option key={warehouse.id} value={warehouse.id}>
+                  {warehouse.name}
+                </option>
+              ))}
+            </Select>
+            {!selectedWarehouseId && (
+              <p className="text-sm text-muted-foreground mt-2">
+                Selecciona una bodega para ver el inventario
               </p>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {showAddProduct && companyId && (
+        <Card className="mb-6 border-2 border-primary">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Agregar Nuevo Producto</CardTitle>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowAddProduct(false)}
+              >
+                ✕ Cerrar
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ProductForm
+              companyId={companyId}
+              onSuccess={() => {
+                setShowAddProduct(false)
+                if (companyId && selectedWarehouseId) {
+                  fetchProducts(companyId, selectedWarehouseId)
+                }
+              }}
+              onCancel={() => setShowAddProduct(false)}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {selectedWarehouseId && (
+        <>
+          <div className="mb-6">
+            <Input
+              placeholder="Buscar producto..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="max-w-md"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {products.map((product) => {
+              const stock = product.stock?.find((s: any) => s.warehouseId === selectedWarehouseId)
+              const stockQuantity = stock?.quantity || 0
+              const isLowStock = stockQuantity < product.minStockThreshold
+              const details = productDetails[product.id] || {}
+              
+              return (
+                <Card key={product.id} className={`hover:shadow-lg transition-shadow ${isLowStock ? 'border-red-300 bg-red-50' : ''}`}>
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <CardTitle className="text-lg flex-1">{product.name}</CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditProduct(product)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {product.imageBase64 && (
+                      <img
+                        src={product.imageBase64}
+                        alt={product.name}
+                        className="w-full h-48 object-cover rounded-md"
+                      />
+                    )}
+                    
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {product.description || "Sin descripción"}
+                    </p>
+                    
+                    <div className="space-y-2 pt-2 border-t">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Package className="h-3 w-3" />
+                          Stock:
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`font-bold ${isLowStock ? 'text-red-600' : 'text-green-600'}`}>
+                            {stockQuantity} unidades
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleAddStock(product)}
+                            className="h-6 px-2 text-xs"
+                          >
+                            <ShoppingCart className="h-3 w-3 mr-1" />
+                            Agregar
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-muted-foreground">Umbral mínimo:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">{product.minStockThreshold} unidades</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditThreshold(product)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {details.lastPurchase && (
+                        <>
+                          <div className="flex justify-between items-center pt-2 border-t">
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              Último pedido:
+                            </span>
+                            <span className="text-xs">
+                              {new Date(details.lastPurchaseDate).toLocaleDateString("es-CO")}
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <DollarSign className="h-3 w-3" />
+                              Precio último pedido:
+                            </span>
+                            <span className="text-sm font-semibold">
+                              ${details.lastPurchasePrice?.toLocaleString("es-CO")} COP
+                            </span>
+                          </div>
+                          
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-muted-foreground">Costo de adquisición:</span>
+                            <span className="text-sm font-semibold text-blue-600">
+                              ${details.lastPurchasePrice?.toLocaleString("es-CO")} COP/unidad
+                            </span>
+                          </div>
+                        </>
+                      )}
+
+                      {isLowStock && (
+                        <p className="text-xs text-red-600 font-semibold mt-2 pt-2 border-t">
+                          ⚠️ Stock bajo
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+
+          {products.length === 0 && (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <p className="text-muted-foreground">
+                  No hay productos con stock en esta bodega.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
     </div>
   )
 }
-

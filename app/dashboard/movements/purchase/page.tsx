@@ -12,12 +12,25 @@ export default function PurchasePage() {
   const router = useRouter()
   const [warehouses, setWarehouses] = useState<any[]>([])
   const [companyId, setCompanyId] = useState<string>("")
+  const [preselectedProductId, setPreselectedProductId] = useState<string>("")
+  const [preselectedWarehouseId, setPreselectedWarehouseId] = useState<string>("")
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login")
     }
   }, [status, router])
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const productId = params.get("productId")
+      const warehouseId = params.get("warehouseId")
+      
+      if (productId) setPreselectedProductId(productId)
+      if (warehouseId) setPreselectedWarehouseId(warehouseId)
+    }
+  }, [])
 
   useEffect(() => {
     if (session) {
@@ -68,10 +81,12 @@ export default function PurchasePage() {
             <CardTitle>Información de la Compra</CardTitle>
           </CardHeader>
           <CardContent>
-            <PurchaseForm 
-              companyId={companyId} 
+            <PurchaseForm
+              companyId={companyId}
               warehouses={warehouses}
-              onSuccess={() => router.push("/dashboard")}
+              preselectedProductId={preselectedProductId}
+              preselectedWarehouseId={preselectedWarehouseId}
+              onSuccess={() => router.push("/dashboard/inventory")}
             />
           </CardContent>
         </Card>
