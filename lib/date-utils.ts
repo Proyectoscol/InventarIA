@@ -46,11 +46,18 @@ export function toColombiaDateString(date: Date | string): string {
 
 /**
  * Obtiene el día del mes en zona horaria de Colombia
+ * Convierte la fecha UTC almacenada en la BD a hora de Colombia para obtener el día correcto
  */
 export function getColombiaDay(date: Date | string): number {
   const d = typeof date === "string" ? new Date(date) : date
-  const colombiaDate = new Date(d.toLocaleString("en-US", { timeZone: COLOMBIA_TIMEZONE }))
-  return colombiaDate.getDate()
+  
+  // Usar Intl.DateTimeFormat para obtener el día en zona horaria de Colombia
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: COLOMBIA_TIMEZONE,
+    day: "numeric"
+  })
+  
+  return parseInt(formatter.format(d))
 }
 
 /**
