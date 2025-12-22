@@ -41,7 +41,8 @@ export async function GET(req: NextRequest) {
         cashAmount: true,
         creditAmount: true,
         totalAmount: true,
-        creditPaid: true
+        creditPaid: true,
+        creditPaidDate: true
       }
     })
     
