@@ -110,30 +110,31 @@ else
   
   # Verificar tablas directamente en PostgreSQL usando SQL
   echo "   Verificando tablas usando SQL directo..."
-  SQL_CHECK=$(echo "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name;" | DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db execute --stdin 2>&1)
+  # Usar una query que devuelva resultados de forma más confiable
+  SQL_CHECK=$(echo "SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" | DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db execute --stdin 2>&1)
   
-  # Contar tablas encontradas
-  TABLES_FOUND=$(echo "$SQL_CHECK" | grep -c "^\s*[a-z_]*\s*$" || echo "0")
+  # Extraer el número de tablas (buscar el número en la salida)
+  TOTAL_TABLES=$(echo "$SQL_CHECK" | grep -oE '[0-9]+' | head -1 || echo "0")
   
-  # Extraer nombres de tablas (líneas que contienen solo nombres de tablas)
-  FOUND_TABLE_NAMES=$(echo "$SQL_CHECK" | grep -E "^\s*(users|companies|user_companies|alert_configs|warehouses|products|stock|batches|customers|movements)\s*$" | tr -d ' ' || echo "")
-  
-  echo "   Tablas encontradas en PostgreSQL: $TABLES_FOUND (esperadas: $EXPECTED_TABLES)"
-  
-  # Verificar que todas las tablas esperadas estén presentes
+  # Verificar cada tabla individualmente
+  TABLES_FOUND=0
   ALL_TABLES_PRESENT=true
   for table_name in $EXPECTED_TABLE_NAMES; do
-    if echo "$SQL_CHECK" | grep -qE "^\s*${table_name}\s*$"; then
+    TABLE_CHECK=$(echo "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '$table_name');" | DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db execute --stdin 2>&1)
+    if echo "$TABLE_CHECK" | grep -qiE "(true|t|1)"; then
       echo "   ✅ Tabla $table_name encontrada"
+      TABLES_FOUND=$((TABLES_FOUND + 1))
     else
       echo "   ❌ Tabla $table_name NO encontrada"
       ALL_TABLES_PRESENT=false
     fi
   done
   
+  echo "   Tablas encontradas en PostgreSQL: $TABLES_FOUND de $EXPECTED_TABLES (total en DB: $TOTAL_TABLES)"
+  
   # Verificar realmente si las tablas existen
-  if [ "$TABLES" = "0" ] || [ "$TABLES" -lt "$EXPECTED_TABLES" ] || [ "$ALL_TABLES_PRESENT" = "false" ]; then
-    echo "   ❌ No se encontraron todas las tablas necesarias (encontradas: $TABLES, esperadas: $EXPECTED_TABLES)"
+  if [ "$TABLES_FOUND" = "0" ] || [ "$TABLES_FOUND" -lt "$EXPECTED_TABLES" ] || [ "$ALL_TABLES_PRESENT" = "false" ]; then
+    echo "   ❌ No se encontraron todas las tablas necesarias (encontradas: $TABLES_FOUND, esperadas: $EXPECTED_TABLES)"
     echo "   Intentando crear tablas faltantes sin borrar datos existentes..."
     # Primero intentar db push normal (sin force-reset para no borrar datos)
     DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db push --accept-data-loss --skip-generate 2>&1
@@ -142,22 +143,21 @@ else
     sleep 3
     echo "   Verificando nuevamente después de db push..."
     
-    # Verificar directamente en PostgreSQL
-    SQL_CHECK=$(echo "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name;" | DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db execute --stdin 2>&1)
-    TABLES_FOUND=$(echo "$SQL_CHECK" | grep -cE "^\s*(users|companies|user_companies|alert_configs|warehouses|products|stock|batches|customers|movements)\s*$" || echo "0")
-    
-    echo "   Después de db push: $TABLES_FOUND tablas encontradas (esperadas: $EXPECTED_TABLES)"
-    
-    # Verificar nuevamente todas las tablas esperadas usando nombres reales
+    # Verificar directamente en PostgreSQL - verificar cada tabla individualmente
+    TABLES_FOUND=0
     ALL_TABLES_PRESENT=true
     for table_name in $EXPECTED_TABLE_NAMES; do
-      if echo "$SQL_CHECK" | grep -qE "^\s*${table_name}\s*$"; then
+      TABLE_CHECK=$(echo "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '$table_name');" | DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db execute --stdin 2>&1)
+      if echo "$TABLE_CHECK" | grep -qiE "(true|t|1)"; then
         echo "   ✅ Tabla $table_name encontrada"
+        TABLES_FOUND=$((TABLES_FOUND + 1))
       else
         echo "   ❌ Tabla $table_name NO encontrada"
         ALL_TABLES_PRESENT=false
       fi
     done
+    
+    echo "   Después de db push: $TABLES_FOUND tablas encontradas (esperadas: $EXPECTED_TABLES)"
     
     if [ "$TABLES_FOUND" = "0" ] || [ "$TABLES_FOUND" -lt "$EXPECTED_TABLES" ] || [ "$ALL_TABLES_PRESENT" = "false" ]; then
       echo "   ⚠️  Algunas tablas aún faltan después de db push"
@@ -247,26 +247,18 @@ else
       
       # Verificar usando SQL directo con nombres reales de tablas
       echo "   Verificando tablas usando SQL directo..."
-      SQL_CHECK=$(echo "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name;" | DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db execute --stdin 2>&1)
-      
-      # Contar tablas esperadas encontradas
       TABLES_FOUND=0
       for table_name in $EXPECTED_TABLE_NAMES; do
-        if echo "$SQL_CHECK" | grep -qE "^\s*${table_name}\s*$"; then
-          TABLES_FOUND=$((TABLES_FOUND + 1))
-        fi
-      done
-      
-      echo "   Tablas encontradas después de creación manual: $TABLES_FOUND de $EXPECTED_TABLES"
-      
-      # Mostrar estado de cada tabla usando nombres reales
-      for table_name in $EXPECTED_TABLE_NAMES; do
-        if echo "$SQL_CHECK" | grep -qE "^\s*${table_name}\s*$"; then
+        TABLE_CHECK=$(echo "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '$table_name');" | DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db execute --stdin 2>&1)
+        if echo "$TABLE_CHECK" | grep -qiE "(true|t|1)"; then
           echo "   ✅ Tabla $table_name encontrada"
+          TABLES_FOUND=$((TABLES_FOUND + 1))
         else
           echo "   ❌ Tabla $table_name NO encontrada"
         fi
       done
+      
+      echo "   Tablas encontradas después de creación manual: $TABLES_FOUND de $EXPECTED_TABLES"
       
       if [ "$TABLES_FOUND" -ge "$EXPECTED_TABLES" ]; then
         echo "   ✅ Todas las tablas están presentes en la base de datos"

@@ -1,12 +1,16 @@
 import nodemailer from "nodemailer"
 
 // Configurar transporter de nodemailer con Mailgun SMTP
+// Para Mailgun, el usuario debe ser un email válido, no solo "api"
+// Si SMTP_USER no es un email, usar SMTP_ADMIN_EMAIL como fallback
+const smtpUser = process.env.SMTP_USER || process.env.SMTP_ADMIN_EMAIL || ""
+
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.mailgun.org",
   port: parseInt(process.env.SMTP_PORT || "587"),
   secure: false, // true para 465, false para otros puertos
   auth: {
-    user: process.env.SMTP_USER || "api",
+    user: smtpUser,
     pass: process.env.SMTP_PASS || ""
   }
 })
