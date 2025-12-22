@@ -72,6 +72,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
   const [creditDaysType, setCreditDaysType] = useState<"preset" | "custom">("preset")
   const [customCreditDays, setCustomCreditDays] = useState<string>("")
   const [stockInfo, setStockInfo] = useState<{ quantity: number; isLowStock: boolean } | null>(null)
+  const [forceUpdate, setForceUpdate] = useState(0) // Para forzar re-render cuando cambia paymentType
   
   // Actualizar lista de clientes cuando cambia el prop
   useEffect(() => {
@@ -126,31 +127,50 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
     }
   }, [productId, warehouseId])
 
-  // Actualizar creditAmount cuando es crédito puro y asegurar que creditDays esté definido
+  // Escuchar cambios en paymentType y asegurar que los campos se inicialicen correctamente
   useEffect(() => {
-    if (paymentType === "credit" && total > 0) {
-      setValue("creditAmount", total, { shouldValidate: true })
-      // Asegurar que creditDays esté definido
+    console.log("🔍 useEffect paymentType cambió a:", paymentType, "total:", total)
+    
+    if (paymentType === "credit") {
+      // Inicializar valores para crédito
+      if (total > 0) {
+        setValue("creditAmount", total, { shouldValidate: true })
+      }
       const currentDays = watch("creditDays")
       if (!currentDays || currentDays <= 0) {
         setValue("creditDays", 15, { shouldValidate: true })
         setCreditDaysType("preset")
       }
-    } else if (paymentType === "mixed" && total > 0) {
-      // Asegurar que creditDays esté definido para mixto
+      // Limpiar contado
+      setValue("cashAmount", undefined)
+    } else if (paymentType === "mixed") {
+      // Inicializar valores para mixto
       const currentDays = watch("creditDays")
       if (!currentDays || currentDays <= 0) {
         setValue("creditDays", 15, { shouldValidate: true })
         setCreditDaysType("preset")
       }
-      // Asegurar que cashAmount y creditAmount estén definidos
+      // Inicializar montos si no existen
       const currentCash = watch("cashAmount")
       const currentCredit = watch("creditAmount")
       if ((!currentCash || currentCash === 0) && (!currentCredit || currentCredit === 0)) {
-        setValue("cashAmount", total / 2, { shouldValidate: true })
-        setValue("creditAmount", total / 2, { shouldValidate: true })
+        if (total > 0) {
+          setValue("cashAmount", total / 2, { shouldValidate: true })
+          setValue("creditAmount", total / 2, { shouldValidate: true })
+        } else {
+          // Inicializar con 0 si no hay total aún
+          setValue("cashAmount", 0, { shouldValidate: true })
+          setValue("creditAmount", 0, { shouldValidate: true })
+        }
       }
+    } else if (paymentType === "cash") {
+      // Limpiar valores de crédito
+      setValue("creditAmount", undefined)
+      setValue("creditDays", undefined)
     }
+    
+    // Forzar re-render
+    setForceUpdate(prev => prev + 1)
   }, [paymentType, total, setValue, watch])
 
   // Obtener último precio de venta cuando se selecciona un producto
@@ -457,11 +477,16 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
               value="cash"
               checked={paymentType === "cash"}
               onChange={(e) => {
-                console.log("Radio clicked: cash")
-                setValue("paymentType", "cash", { shouldValidate: true })
-                setValue("cashAmount", undefined)
-                setValue("creditAmount", undefined)
-                setValue("creditDays", undefined)
+                console.log("✅ Radio clicked: cash")
+                setValue("paymentType", "cash", { shouldValidate: true, shouldDirty: true })
+                // Forzar re-render inmediato
+                setForceUpdate(prev => prev + 1)
+                // Limpiar valores en el siguiente tick para asegurar que se apliquen
+                setTimeout(() => {
+                  setValue("cashAmount", undefined)
+                  setValue("creditAmount", undefined)
+                  setValue("creditDays", undefined)
+                }, 0)
               }}
               className="h-4 w-4"
             />
@@ -475,15 +500,24 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
               value="credit"
               checked={paymentType === "credit"}
               onChange={(e) => {
-                console.log("Radio clicked: credit")
-                setValue("paymentType", "credit", { shouldValidate: true })
-                setValue("cashAmount", undefined)
-                setValue("creditAmount", total > 0 ? total : 0)
-                const currentDays = watch("creditDays")
-                if (!currentDays) {
-                  setValue("creditDays", 15, { shouldValidate: true })
-                  setCreditDaysType("preset")
-                }
+                console.log("✅ Radio clicked: credit, total:", total)
+                setValue("paymentType", "credit", { shouldValidate: true, shouldDirty: true })
+                // Forzar re-render inmediato
+                setForceUpdate(prev => prev + 1)
+                // Inicializar valores en el siguiente tick
+                setTimeout(() => {
+                  setValue("cashAmount", undefined)
+                  if (total > 0) {
+                    setValue("creditAmount", total, { shouldValidate: true })
+                  } else {
+                    setValue("creditAmount", 0, { shouldValidate: true })
+                  }
+                  const currentDays = watch("creditDays")
+                  if (!currentDays || currentDays <= 0) {
+                    setValue("creditDays", 15, { shouldValidate: true })
+                    setCreditDaysType("preset")
+                  }
+                }, 0)
               }}
               className="h-4 w-4"
             />
@@ -497,20 +531,30 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
               value="mixed"
               checked={paymentType === "mixed"}
               onChange={(e) => {
-                console.log("Radio clicked: mixed")
-                setValue("paymentType", "mixed", { shouldValidate: true })
-                const currentCash = watch("cashAmount")
-                const currentCredit = watch("creditAmount")
-                if ((!currentCash || currentCash === 0) && (!currentCredit || currentCredit === 0)) {
-                  const half = total > 0 ? total / 2 : 0
-                  setValue("cashAmount", half, { shouldValidate: true })
-                  setValue("creditAmount", half, { shouldValidate: true })
-                }
-                const currentDays = watch("creditDays")
-                if (!currentDays) {
-                  setValue("creditDays", 15, { shouldValidate: true })
-                  setCreditDaysType("preset")
-                }
+                console.log("✅ Radio clicked: mixed, total:", total)
+                setValue("paymentType", "mixed", { shouldValidate: true, shouldDirty: true })
+                // Forzar re-render inmediato
+                setForceUpdate(prev => prev + 1)
+                // Inicializar valores en el siguiente tick
+                setTimeout(() => {
+                  const currentCash = watch("cashAmount")
+                  const currentCredit = watch("creditAmount")
+                  if ((!currentCash || currentCash === 0) && (!currentCredit || currentCredit === 0)) {
+                    if (total > 0) {
+                      const half = total / 2
+                      setValue("cashAmount", half, { shouldValidate: true })
+                      setValue("creditAmount", half, { shouldValidate: true })
+                    } else {
+                      setValue("cashAmount", 0, { shouldValidate: true })
+                      setValue("creditAmount", 0, { shouldValidate: true })
+                    }
+                  }
+                  const currentDays = watch("creditDays")
+                  if (!currentDays || currentDays <= 0) {
+                    setValue("creditDays", 15, { shouldValidate: true })
+                    setCreditDaysType("preset")
+                  }
+                }, 0)
               }}
               className="h-4 w-4"
             />
@@ -520,15 +564,20 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
 
         {/* Debug - siempre visible para troubleshooting */}
         <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-          <strong>Debug:</strong> paymentType = <span className="font-mono">{String(paymentType || "undefined")}</span>
+          <strong>Debug:</strong> paymentType = <span className="font-mono font-bold">{String(paymentType || "undefined")}</span>
           {paymentType && (
             <span className="ml-2">
-              (tipo: {typeof paymentType})
+              (tipo: {typeof paymentType}, forceUpdate: {forceUpdate})
             </span>
           )}
+          <div className="mt-1 text-xs">
+            creditDays: {watch("creditDays") || "undefined"} | 
+            cashAmount: {watch("cashAmount") || "undefined"} | 
+            creditAmount: {watch("creditAmount") || "undefined"}
+          </div>
         </div>
 
-        {/* Campos para crédito */}
+        {/* Campos para crédito - siempre mostrar si es credit o mixed */}
         {(paymentType === "credit" || paymentType === "mixed") && (
           <div className="mt-4 space-y-3 pl-6 border-l-2 border-primary/20">
             {/* Días de crédito */}
