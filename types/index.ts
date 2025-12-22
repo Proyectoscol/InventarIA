@@ -92,3 +92,6 @@ export interface AlertConfig {
   enableAlerts: boolean
 }
 
+// Exportar tipos de contactos
+export * from './contacts'
+
