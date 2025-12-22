@@ -82,10 +82,7 @@ export function QuickProductCreationModal({
   const unitPrice = priceType === "unit" ? price : (quantity > 0 ? price / quantity : 0)
 
   // Paso 1: Crear producto
-  const onProductSubmit = async (data: ProductFormData, e?: React.BaseSyntheticEvent) => {
-    e?.preventDefault()
-    e?.stopPropagation()
-    
+  const onProductSubmit = async (data: ProductFormData) => {
     setLoading(true)
     try {
       const res = await fetch("/api/products", {
@@ -284,7 +281,7 @@ export function QuickProductCreationModal({
                 const isValid = await purchaseForm.trigger()
                 if (isValid) {
                   const data = purchaseForm.getValues()
-                  await onPurchaseSubmit(data, e)
+                  await onPurchaseSubmit(data)
                 }
               }} 
               className="space-y-6"
