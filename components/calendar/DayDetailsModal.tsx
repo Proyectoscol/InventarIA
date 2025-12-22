@@ -58,11 +58,9 @@ export function DayDetailsModal({ date, companyId, onClose }: DayDetailsModalPro
   }
 
   const handleEditMovement = (movementId: string, type: string) => {
-    if (type === "purchase") {
-      router.push(`/dashboard/movements/purchase?edit=${movementId}`)
-    } else {
-      router.push(`/dashboard/movements/sale?edit=${movementId}`)
-    }
+    // Por ahora, redirigir a la página de movimientos con el ID
+    // TODO: Implementar páginas de edición específicas
+    router.push(`/dashboard/movements?edit=${movementId}&type=${type}`)
     onClose()
   }
 
