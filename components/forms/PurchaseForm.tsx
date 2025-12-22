@@ -221,7 +221,7 @@ export function PurchaseForm({ companyId, warehouses, onSuccess, onCancel }: Pur
         <Label>Notas (Opcional)</Label>
         <textarea
           {...register("notes")}
-          className="w-full border rounded-md p-2"
+          className="w-full border rounded-md p-2 text-base"
           rows={3}
         />
       </div>

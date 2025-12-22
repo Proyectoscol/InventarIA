@@ -426,7 +426,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         <Label>Notas (Opcional)</Label>
         <textarea
           {...register("notes")}
-          className="w-full border rounded-md p-2"
+          className="w-full border rounded-md p-2 text-base"
           rows={3}
         />
       </div>

@@ -79,7 +79,7 @@ export function WarehouseForm({ companyId, warehouse, onSuccess, onCancel }: War
         <textarea
           id="description"
           {...register("description")}
-          className="w-full border rounded-md p-2"
+          className="w-full border rounded-md p-2 text-base"
           rows={3}
           placeholder="Descripción opcional de la bodega"
         />
