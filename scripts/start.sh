@@ -171,7 +171,7 @@ else
       echo "   Intentando crear tablas faltantes manualmente (sin borrar datos existentes)..."
       
       # Intentar crear las tablas faltantes usando SQL directo
-      echo "   Creando Batch, Customer y Movement usando SQL..."
+      echo "   Creando batches, customers y movements usando SQL..."
       
       # Batch table
       echo "   Creando tabla batches..."
