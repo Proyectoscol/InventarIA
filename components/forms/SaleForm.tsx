@@ -82,7 +82,6 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
   const quantity = watch("quantity")
   const unitPrice = watch("unitPrice")
   const productId = watch("productId")
-  const [totalPriceInput, setTotalPriceInput] = useState<string>("")
 
   const total = (quantity || 0) * (unitPrice || 0)
 
