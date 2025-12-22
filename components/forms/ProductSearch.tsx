@@ -17,6 +17,7 @@ interface ProductSearchProps {
   onCreateNew?: (name: string) => void
   placeholder?: string
   disabled?: boolean
+  preselectedProductId?: string
 }
 
 export function ProductSearch({ 
@@ -48,6 +49,16 @@ export function ProductSearch({
           )
           setAllProducts(sorted)
           setFilteredProducts(sorted)
+          
+          // Si hay un producto pre-seleccionado, seleccionarlo automáticamente
+          if (preselectedProductId) {
+            const preselected = sorted.find((p: Product) => p.id === preselectedProductId)
+            if (preselected) {
+              setSelectedProduct(preselected)
+              setSearch(preselected.name)
+              onSelect(preselected)
+            }
+          }
         }
       } catch (error) {
         console.error("Error cargando productos:", error)
@@ -59,7 +70,7 @@ export function ProductSearch({
     if (companyId) {
       fetchAllProducts()
     }
-  }, [companyId])
+  }, [companyId, preselectedProductId, onSelect])
 
   // Filtrar productos localmente cuando el usuario escribe
   useEffect(() => {
