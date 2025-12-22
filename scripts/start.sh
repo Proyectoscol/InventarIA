@@ -245,41 +245,34 @@ else
       echo "   Verificando nuevamente después de creación manual..."
       sleep 2
       
-      # Verificar usando SQL directo en lugar de solo db pull
+      # Verificar usando SQL directo con nombres reales de tablas
       echo "   Verificando tablas usando SQL directo..."
-      SQL_CHECK=$(echo "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" | DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db execute --stdin 2>&1 | tail -1 | grep -oE '[0-9]+' || echo "0")
+      SQL_CHECK=$(echo "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name;" | DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db execute --stdin 2>&1)
       
-      if [ -n "$SQL_CHECK" ] && [ "$SQL_CHECK" != "0" ]; then
-        echo "   ✅ Verificación SQL: $SQL_CHECK tablas encontradas en la base de datos"
-        
-        # Verificar tablas específicas
-        for table in batches customers movements; do
-          TABLE_CHECK=$(echo "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '$table');" | DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db execute --stdin 2>&1 | grep -i "true\|1" || echo "")
-          if [ -n "$TABLE_CHECK" ]; then
-            echo "   ✅ Tabla $table existe en la base de datos"
-          else
-            echo "   ⚠️  Tabla $table no detectada (puede ser un problema de detección de Prisma)"
-          fi
-        done
-        
-        if [ "$SQL_CHECK" -ge "$EXPECTED_TABLES" ]; then
-          echo "   ✅ Todas las tablas están presentes en la base de datos"
-          echo "   ℹ️  Nota: Prisma db pull puede no detectarlas, pero las tablas existen"
-        else
-          echo "   ⚠️  Solo $SQL_CHECK tablas encontradas (esperadas: $EXPECTED_TABLES)"
+      # Contar tablas esperadas encontradas
+      TABLES_FOUND=0
+      for table_name in $EXPECTED_TABLE_NAMES; do
+        if echo "$SQL_CHECK" | grep -qE "^\s*${table_name}\s*$"; then
+          TABLES_FOUND=$((TABLES_FOUND + 1))
         fi
+      done
+      
+      echo "   Tablas encontradas después de creación manual: $TABLES_FOUND de $EXPECTED_TABLES"
+      
+      # Mostrar estado de cada tabla usando nombres reales
+      for table_name in $EXPECTED_TABLE_NAMES; do
+        if echo "$SQL_CHECK" | grep -qE "^\s*${table_name}\s*$"; then
+          echo "   ✅ Tabla $table_name encontrada"
+        else
+          echo "   ❌ Tabla $table_name NO encontrada"
+        fi
+      done
+      
+      if [ "$TABLES_FOUND" -ge "$EXPECTED_TABLES" ]; then
+        echo "   ✅ Todas las tablas están presentes en la base de datos"
       else
-        # Fallback a db pull
-        PULL_OUTPUT=$(DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db pull --print 2>&1 | head -100)
-        TABLES=$(echo "$PULL_OUTPUT" | grep -c "^model " || echo "0")
-        echo "   Tablas encontradas después de creación manual: $TABLES de $EXPECTED_TABLES"
-        
-        if [ "$TABLES" -lt "$EXPECTED_TABLES" ]; then
-          echo "   ⚠️  Prisma no detecta todas las tablas, pero pueden existir en la base de datos"
-          echo "   Verifica directamente en PostgreSQL con: SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';"
-        else
-          echo "   ✅ Todas las tablas creadas exitosamente"
-        fi
+        echo "   ⚠️  Solo $TABLES_FOUND tablas encontradas (esperadas: $EXPECTED_TABLES)"
+        echo "   Verifica directamente en PostgreSQL con: SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';"
       fi
       
       echo "   ℹ️  Continuando con el inicio del servidor..."
