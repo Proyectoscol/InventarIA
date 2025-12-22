@@ -25,7 +25,8 @@ export function ProductSearch({
   onSelect, 
   onCreateNew, 
   placeholder = "Buscar producto...",
-  disabled = false
+  disabled = false,
+  preselectedProductId
 }: ProductSearchProps) {
   const [search, setSearch] = useState("")
   const [allProducts, setAllProducts] = useState<Product[]>([])
