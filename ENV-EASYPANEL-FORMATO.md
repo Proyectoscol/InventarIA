@@ -74,11 +74,24 @@ NEXTAUTH_SECRET=zmjmjbSxdweDEV8nPNlorYUYnLjadLt4flr7iovlCew=
 NEXTAUTH_URL=https://inventory-inventaria.q15bqn.easypanel.host
 
 # Mail (SMTP - Mailgun)
+# ⚠️ IMPORTANTE: Para SMTP necesitas credenciales SMTP específicas del dashboard de Mailgun
+# NO uses el API key de la REST API. Las credenciales SMTP son diferentes.
+# 
+# Cómo obtener las credenciales SMTP:
+# 1. Ve a Mailgun Dashboard → Sending → Domains → Tu dominio → Domain Settings → SMTP credentials
+# 2. El username típicamente es: postmaster@mg.your-domain.com
+# 3. La password es la contraseña SMTP específica (diferente del API key)
+#
+# Ver MAILGUN-SMTP-SETUP.md para más detalles
 SMTP_ADMIN_EMAIL=noreply@notify.technocol.co
 SMTP_HOST=smtp.mailgun.org
+# Para EU: smtp.eu.mailgun.org
 SMTP_PORT=587
-SMTP_USER=api
-SMTP_PASS=tu-mailgun-smtp-password
+# Para SSL: 465
+SMTP_USER=postmaster@mg.your-domain.com
+# ⚠️ DEBE ser un email válido (no "api")
+SMTP_PASS=tu-contraseña-SMTP-específica
+# ⚠️ NO es tu API key, es la contraseña SMTP del dashboard
 SMTP_SENDER_NAME=Notificaciones Technocol
 
 # Node
