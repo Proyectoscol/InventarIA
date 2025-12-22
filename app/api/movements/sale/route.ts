@@ -4,6 +4,24 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { sendStockAlert } from "@/lib/email"
 
+async function checkAndSendCreditAlert(companyId: string) {
+  try {
+    const res = await fetch(`${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/credits/check-due`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ companyId })
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (data.notified) {
+        console.log(`✅ Alerta de créditos enviada: ${data.credits} créditos`)
+      }
+    }
+  } catch (error) {
+    console.error("Error verificando créditos vencidos:", error)
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -202,16 +220,28 @@ export async function POST(req: NextRequest) {
       return movement
     })
     
-    // 7. VERIFICAR Y ENVIAR ALERTA (fuera de transacción)
+    // 7. VERIFICAR Y ENVIAR ALERTAS (fuera de transacción)
     try {
-      await checkAndSendAlert({
+      // Alerta de stock bajo
+      await checkAndSendStockAlert({
         productId: data.productId,
         warehouseId: data.warehouseId,
         companyId: data.companyId
       })
     } catch (alertError) {
-      console.error("Error enviando alerta:", alertError)
+      console.error("❌ Error enviando alerta de stock:", alertError)
       // No fallar la venta si falla el email
+    }
+    
+    // Si hay crédito, verificar créditos vencidos después de un delay
+    if (result.creditAmount && result.creditAmount > 0 && result.creditDueDate) {
+      setTimeout(async () => {
+        try {
+          await checkAndSendCreditAlert(data.companyId)
+        } catch (creditAlertError) {
+          console.error("❌ Error verificando créditos vencidos:", creditAlertError)
+        }
+      }, 2000) // Esperar 2 segundos para que el movimiento esté guardado
     }
     
     return NextResponse.json(result, { status: 201 })
@@ -224,7 +254,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function checkAndSendAlert({
+async function checkAndSendStockAlert({
   productId,
   warehouseId,
   companyId
