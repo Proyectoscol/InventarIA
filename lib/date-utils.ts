@@ -55,21 +55,19 @@ export function getColombiaDay(date: Date | string): number {
 
 /**
  * Crea un rango de fechas para un día completo en zona horaria de Colombia
- * Las fechas se crean considerando que Colombia está en UTC-5
- * 00:00:00 Colombia = 05:00:00 UTC del mismo día
- * 23:59:59 Colombia = 04:59:59 UTC del día siguiente
+ * Colombia está en UTC-5, así que:
+ * - 00:00:00 Colombia = 05:00:00 UTC del mismo día
+ * - 23:59:59 Colombia = 04:59:59 UTC del día siguiente
  */
 export function getColombiaDayRange(dateString: string): { start: Date; end: Date } {
-  // Parsear la fecha
+  // Parsear la fecha (YYYY-MM-DD)
   const [year, month, day] = dateString.split("-").map(Number)
   
   // Crear fecha de inicio: 00:00:00 en Colombia = 05:00:00 UTC del mismo día
-  const startStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}T05:00:00.000Z`
-  const start = new Date(startStr)
+  const start = new Date(Date.UTC(year, month - 1, day, 5, 0, 0, 0))
   
   // Crear fecha de fin: 23:59:59 en Colombia = 04:59:59 UTC del día siguiente
-  const nextDay = new Date(Date.UTC(year, month - 1, day + 1, 4, 59, 59, 999))
-  const end = nextDay
+  const end = new Date(Date.UTC(year, month - 1, day + 1, 4, 59, 59, 999))
   
   return { start, end }
 }
