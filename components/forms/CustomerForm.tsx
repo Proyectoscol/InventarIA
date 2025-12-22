@@ -12,7 +12,6 @@ import { ContactRound } from "lucide-react"
 
 type CustomerFormData = {
   name: string
-  email?: string
   phone?: string
   address?: string
 }
@@ -34,7 +33,6 @@ export function CustomerForm({ companyId, customer, onSuccess, onCancel }: Custo
     resolver: zodResolver(customerSchema),
     defaultValues: {
       name: customer?.name || "",
-      email: customer?.email || "",
       phone: customer?.phone || "",
       address: customer?.address || ""
     }
