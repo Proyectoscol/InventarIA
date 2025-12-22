@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/shared/BackButton"
 import { CustomerForm } from "@/components/forms/CustomerForm"
+import { CustomerDetailsModal } from "@/components/modals/CustomerDetailsModal"
 import { toast } from "sonner"
 import { User } from "lucide-react"
 
@@ -18,6 +19,7 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateCustomer, setShowCreateCustomer] = useState(false)
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -197,15 +199,16 @@ export default function CustomersPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {customers.map((customer) => (
-                  <Card key={customer.id} className="hover:shadow-md transition-shadow">
+                  <Card 
+                    key={customer.id} 
+                    className="hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => setSelectedCustomer(customer)}
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h3 className="font-semibold text-lg mb-1">{customer.name}</h3>
                           <div className="space-y-1 text-sm text-muted-foreground">
-                            {customer.email && (
-                              <p>📧 {customer.email}</p>
-                            )}
                             {customer.phone && (
                               <p>📞 {customer.phone}</p>
                             )}
@@ -223,6 +226,15 @@ export default function CustomersPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Modal de detalles del cliente */}
+        {selectedCustomer && selectedCompanyId && (
+          <CustomerDetailsModal
+            customer={selectedCustomer}
+            companyId={selectedCompanyId}
+            onClose={() => setSelectedCustomer(null)}
+          />
+        )}
       </div>
     </div>
   )
