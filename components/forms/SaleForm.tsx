@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Select } from "@/components/ui/select"
 import { ProductSearch } from "./ProductSearch"
 import { CustomerForm } from "./CustomerForm"
+import { QuickProductCreationModal } from "@/components/modals/QuickProductCreationModal"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -53,6 +54,8 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [showCreateCustomer, setShowCreateCustomer] = useState(false)
+  const [showQuickProductCreation, setShowQuickProductCreation] = useState(false)
+  const [quickProductName, setQuickProductName] = useState("")
   const [customers, setCustomers] = useState(initialCustomers)
   const [lastSalePrice, setLastSalePrice] = useState<number | null>(null)
   const [priceInputType, setPriceInputType] = useState<"unit" | "total">("unit")
@@ -188,38 +191,9 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
             setSelectedProduct(product)
             setValue("productId", product.id)
           }}
-          onCreateNew={async (name) => {
-            try {
-              const res = await fetch("/api/products", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  name: name.trim(),
-                  companyId,
-                  minStockThreshold: 10
-                })
-              })
-
-              if (!res.ok) {
-                const error = await res.json()
-                throw new Error(error.error || "Error al crear producto")
-              }
-
-              const newProduct = await res.json()
-              toast.success("✅ Producto creado exitosamente", {
-                description: `El producto "${newProduct.name}" se ha agregado y seleccionado`,
-                duration: 3000
-              })
-              
-              // Seleccionar el nuevo producto automáticamente
-              setSelectedProduct(newProduct)
-              setValue("productId", newProduct.id)
-            } catch (error: any) {
-              toast.error("❌ Error al crear producto", {
-                description: error.message || "Por favor, intenta nuevamente",
-                duration: 4000
-              })
-            }
+          onCreateNew={(name) => {
+            setQuickProductName(name)
+            setShowQuickProductCreation(true)
           }}
         />
         {selectedProduct && (
