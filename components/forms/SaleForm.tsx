@@ -95,8 +95,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
           if (data.lastPrice) {
             setLastSalePrice(data.lastPrice)
             // Solo sugerir el último precio si no hay precio ingresado
-            const currentPrice = watch("unitPrice")
-            if (!currentPrice || currentPrice === 0) {
+            if (!unitPrice || unitPrice === 0) {
               setValue("unitPrice", data.lastPrice)
             }
           } else {
@@ -110,7 +109,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
     } else {
       setLastSalePrice(null)
     }
-  }, [productId, setValue])
+  }, [productId, setValue, unitPrice])
 
   // Actualizar precio unitario cuando cambia el precio total
   useEffect(() => {
