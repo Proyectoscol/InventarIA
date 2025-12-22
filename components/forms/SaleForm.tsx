@@ -221,11 +221,10 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
             type="number"
             step="0.01"
             placeholder="0"
+            value={totalPriceInput}
             onChange={(e) => {
-              const totalValue = parseFloat(e.target.value) || 0
-              handleTotalPriceChange(totalValue)
+              setTotalPriceInput(e.target.value)
             }}
-            value={total || ""}
           />
         )}
         
