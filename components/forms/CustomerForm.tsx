@@ -113,7 +113,7 @@ export function CustomerForm({ companyId, customer, onSuccess, onCancel }: Custo
         <textarea
           id="address"
           {...register("address")}
-          className="w-full border rounded-md p-2"
+          className="w-full border rounded-md p-2 text-base"
           rows={3}
           placeholder="Dirección del cliente"
         />
