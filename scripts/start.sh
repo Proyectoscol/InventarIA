@@ -103,28 +103,30 @@ else
   # Usar db pull para ver qué hay en la base de datos
   PULL_OUTPUT=$(DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db pull --print 2>&1 | head -100)
   
-  # Tablas esperadas (10 en total)
+  # Tablas esperadas (10 en total) - usar nombres reales de PostgreSQL según @@map
   EXPECTED_TABLES=10
-  EXPECTED_MODELS="User Company UserCompany AlertConfig Warehouse Product Stock Batch Customer Movement"
+  # Nombres reales de las tablas en PostgreSQL (según @@map en schema.prisma)
+  EXPECTED_TABLE_NAMES="users companies user_companies alert_configs warehouses products stock batches customers movements"
   
-  # Si db pull encuentra tablas, las mostrará en el schema
-  if echo "$PULL_OUTPUT" | grep -q "model"; then
-    TABLES=$(echo "$PULL_OUTPUT" | grep -c "^model " || echo "0")
-    echo "   Encontradas $TABLES tablas usando db pull (esperadas: $EXPECTED_TABLES)"
-    echo "   Tablas encontradas:"
-    echo "$PULL_OUTPUT" | grep "^model " | sed 's/^model /     - /' || true
-  else
-    TABLES="0"
-    echo "   No se encontraron tablas (db pull no encontró modelos)"
-  fi
+  # Verificar tablas directamente en PostgreSQL usando SQL
+  echo "   Verificando tablas usando SQL directo..."
+  SQL_CHECK=$(echo "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name;" | DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db execute --stdin 2>&1)
+  
+  # Contar tablas encontradas
+  TABLES_FOUND=$(echo "$SQL_CHECK" | grep -c "^\s*[a-z_]*\s*$" || echo "0")
+  
+  # Extraer nombres de tablas (líneas que contienen solo nombres de tablas)
+  FOUND_TABLE_NAMES=$(echo "$SQL_CHECK" | grep -E "^\s*(users|companies|user_companies|alert_configs|warehouses|products|stock|batches|customers|movements)\s*$" | tr -d ' ' || echo "")
+  
+  echo "   Tablas encontradas en PostgreSQL: $TABLES_FOUND (esperadas: $EXPECTED_TABLES)"
   
   # Verificar que todas las tablas esperadas estén presentes
   ALL_TABLES_PRESENT=true
-  for model in $EXPECTED_MODELS; do
-    if echo "$PULL_OUTPUT" | grep -q "model $model"; then
-      echo "   ✅ Tabla $model encontrada"
+  for table_name in $EXPECTED_TABLE_NAMES; do
+    if echo "$SQL_CHECK" | grep -qE "^\s*${table_name}\s*$"; then
+      echo "   ✅ Tabla $table_name encontrada"
     else
-      echo "   ❌ Tabla $model NO encontrada"
+      echo "   ❌ Tabla $table_name NO encontrada"
       ALL_TABLES_PRESENT=false
     fi
   done
@@ -140,30 +142,24 @@ else
     sleep 3
     echo "   Verificando nuevamente después de db push..."
     
-    PULL_OUTPUT=$(DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db pull --print 2>&1 | head -100)
+    # Verificar directamente en PostgreSQL
+    SQL_CHECK=$(echo "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name;" | DATABASE_URL="$DATABASE_URL" $PRISMA_CMD db execute --stdin 2>&1)
+    TABLES_FOUND=$(echo "$SQL_CHECK" | grep -cE "^\s*(users|companies|user_companies|alert_configs|warehouses|products|stock|batches|customers|movements)\s*$" || echo "0")
     
-    if echo "$PULL_OUTPUT" | grep -q "model"; then
-      TABLES=$(echo "$PULL_OUTPUT" | grep -c "^model " || echo "0")
-      echo "   Después de db push: $TABLES tablas encontradas (esperadas: $EXPECTED_TABLES)"
-      echo "   Tablas encontradas:"
-      echo "$PULL_OUTPUT" | grep "^model " | sed 's/^model /     - /' || true
-    else
-      TABLES="0"
-      echo "   Después de db push: 0 tablas encontradas"
-    fi
+    echo "   Después de db push: $TABLES_FOUND tablas encontradas (esperadas: $EXPECTED_TABLES)"
     
-    # Verificar nuevamente todas las tablas esperadas
+    # Verificar nuevamente todas las tablas esperadas usando nombres reales
     ALL_TABLES_PRESENT=true
-    for model in $EXPECTED_MODELS; do
-      if echo "$PULL_OUTPUT" | grep -q "model $model"; then
-        echo "   ✅ Tabla $model encontrada"
+    for table_name in $EXPECTED_TABLE_NAMES; do
+      if echo "$SQL_CHECK" | grep -qE "^\s*${table_name}\s*$"; then
+        echo "   ✅ Tabla $table_name encontrada"
       else
-        echo "   ❌ Tabla $model NO encontrada"
+        echo "   ❌ Tabla $table_name NO encontrada"
         ALL_TABLES_PRESENT=false
       fi
     done
     
-    if [ "$TABLES" = "0" ] || [ "$TABLES" -lt "$EXPECTED_TABLES" ] || [ "$ALL_TABLES_PRESENT" = "false" ]; then
+    if [ "$TABLES_FOUND" = "0" ] || [ "$TABLES_FOUND" -lt "$EXPECTED_TABLES" ] || [ "$ALL_TABLES_PRESENT" = "false" ]; then
       echo "   ⚠️  Algunas tablas aún faltan después de db push"
       echo "   Esto puede indicar un problema de permisos o que las tablas necesitan crearse manualmente"
       echo "   Verifica:"
