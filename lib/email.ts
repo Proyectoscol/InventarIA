@@ -11,6 +11,15 @@ const transporter = nodemailer.createTransport({
   }
 })
 
+// Verificar conexión al inicializar
+transporter.verify(function (error, success) {
+  if (error) {
+    console.error("❌ Error en configuración SMTP:", error)
+  } else {
+    console.log("✅ Servidor SMTP listo para enviar emails")
+  }
+})
+
 export async function sendStockAlert({
   to,
   productName,
@@ -77,11 +86,112 @@ Este es un mensaje automático del Sistema de Inventario.
       html: htmlBody
     }
 
+    console.log("📧 Intentando enviar alerta de stock a:", to.join(", "))
+    console.log("📧 Configuración SMTP:", {
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      user: process.env.SMTP_USER,
+      from: process.env.SMTP_ADMIN_EMAIL
+    })
+
     const info = await transporter.sendMail(mailOptions)
-    console.log(`Alerta enviada para ${productName} a ${to.join(", ")}:`, info.messageId)
+    console.log(`✅ Alerta enviada para ${productName} a ${to.join(", ")}:`, info.messageId)
     return { success: true, messageId: info.messageId }
-  } catch (error) {
-    console.error("Error enviando email:", error)
+  } catch (error: any) {
+    console.error("❌ Error enviando email de stock:", error)
+    console.error("❌ Detalles del error:", {
+      message: error.message,
+      code: error.code,
+      response: error.response,
+      responseCode: error.responseCode
+    })
+    throw error
+  }
+}
+
+export async function sendCreditDueAlert({
+  to,
+  movements
+}: {
+  to: string[]
+  movements: Array<{
+    movementNumber: string
+    customerName: string
+    productName: string
+    creditAmount: number
+    dueDate: Date
+    daysOverdue?: number
+  }>
+}) {
+  const isOverdue = movements.some(m => m.daysOverdue && m.daysOverdue > 0)
+  const subject = isOverdue 
+    ? `🔴 Alerta: Créditos Vencidos (${movements.length})`
+    : `⚠️ Recordatorio: Créditos por Vencer (${movements.length})`
+
+  const emailBody = `
+${isOverdue ? "🔴 ALERTA: CRÉDITOS VENCIDOS" : "⚠️ RECORDATORIO: CRÉDITOS POR VENCER"}
+
+Total de créditos: ${movements.length}
+
+${movements.map((m, i) => `
+${i + 1}. ${m.movementNumber}
+   Cliente: ${m.customerName}
+   Producto: ${m.productName}
+   Monto: ${Number(m.creditAmount).toLocaleString("es-CO")} COP
+   Fecha de Vencimiento: ${new Date(m.dueDate).toLocaleDateString("es-CO")}
+   ${m.daysOverdue ? `⚠️ Vencido hace ${m.daysOverdue} días` : "⏰ Por vencer"}
+`).join("\n")}
+
+---
+Este es un mensaje automático del Sistema de Inventario.
+  `.trim()
+
+  const htmlBody = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: ${isOverdue ? "#dc2626" : "#f59e0b"};">
+        ${isOverdue ? "🔴 ALERTA: CRÉDITOS VENCIDOS" : "⚠️ RECORDATORIO: CRÉDITOS POR VENCER"}
+      </h2>
+      <div style="background-color: ${isOverdue ? "#fef2f2" : "#fffbeb"}; padding: 20px; border-radius: 8px; border-left: 4px solid ${isOverdue ? "#dc2626" : "#f59e0b"};">
+        <p><strong>Total de créditos:</strong> ${movements.length}</p>
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 15px 0;">
+        ${movements.map((m, i) => `
+          <div style="margin-bottom: 15px; padding: 10px; background-color: white; border-radius: 4px;">
+            <p><strong>${i + 1}. ${m.movementNumber}</strong></p>
+            <p><strong>Cliente:</strong> ${m.customerName}</p>
+            <p><strong>Producto:</strong> ${m.productName}</p>
+            <p><strong>Monto:</strong> ${Number(m.creditAmount).toLocaleString("es-CO")} COP</p>
+            <p><strong>Fecha de Vencimiento:</strong> ${new Date(m.dueDate).toLocaleDateString("es-CO")}</p>
+            ${m.daysOverdue ? `<p style="color: #dc2626; font-weight: bold;">⚠️ Vencido hace ${m.daysOverdue} días</p>` : "<p style="color: #f59e0b;">⏰ Por vencer</p>"}
+          </div>
+        `).join("")}
+      </div>
+      <p style="margin-top: 20px; color: #9ca3af; font-size: 12px;">
+        Este es un mensaje automático del Sistema de Inventario.
+      </p>
+    </div>
+  `
+
+  try {
+    const mailOptions = {
+      from: `"${process.env.SMTP_SENDER_NAME || "Sistema Inventario"}" <${process.env.SMTP_ADMIN_EMAIL}>`,
+      to: to.join(", "),
+      subject: subject,
+      text: emailBody,
+      html: htmlBody
+    }
+
+    console.log("📧 Intentando enviar alerta de créditos a:", to.join(", "))
+    const info = await transporter.sendMail(mailOptions)
+    console.log(`✅ Alerta de créditos enviada a ${to.join(", ")}:`, info.messageId)
+    return { success: true, messageId: info.messageId }
+  } catch (error: any) {
+    console.error("❌ Error enviando email de créditos:", error)
+    console.error("❌ Detalles del error:", {
+      message: error.message,
+      code: error.code,
+      response: error.response,
+      responseCode: error.responseCode
+    })
     throw error
   }
 }
@@ -96,10 +206,17 @@ export async function sendTestEmail(to: string) {
       html: "<p>¡La configuración de email está funcionando correctamente!</p>"
     }
 
+    console.log("📧 Enviando email de prueba a:", to)
     const info = await transporter.sendMail(mailOptions)
+    console.log("✅ Email de prueba enviado:", info.messageId)
     return { success: true, messageId: info.messageId }
-  } catch (error) {
-    console.error("Error en email de prueba:", error)
-    return { success: false, error }
+  } catch (error: any) {
+    console.error("❌ Error en email de prueba:", error)
+    console.error("❌ Detalles:", {
+      message: error.message,
+      code: error.code,
+      response: error.response
+    })
+    return { success: false, error: error.message }
   }
 }

@@ -125,11 +125,20 @@ export async function POST(req: NextRequest) {
       let finalCashAmount: number | null = null
       let finalCreditAmount: number | null = null
       let finalCreditDays: number | null = null
+      let finalCreditDueDate: Date | null = null
+      
+      // Calcular fecha de vencimiento si hay crédito
+      if ((data.paymentType === "credit" || data.paymentType === "mixed") && data.creditDays) {
+        const movementDate = new Date() // Fecha actual (se guardará en movementDate)
+        finalCreditDueDate = new Date(movementDate)
+        finalCreditDueDate.setDate(finalCreditDueDate.getDate() + data.creditDays)
+      }
       
       if (data.paymentType === "cash") {
         finalCashAmount = totalAmount
         finalCreditAmount = null
         finalCreditDays = null
+        finalCreditDueDate = null
       } else if (data.paymentType === "credit") {
         finalCashAmount = null
         finalCreditAmount = totalAmount
@@ -144,6 +153,7 @@ export async function POST(req: NextRequest) {
       console.log("  cashAmount:", finalCashAmount)
       console.log("  creditAmount:", finalCreditAmount)
       console.log("  creditDays:", finalCreditDays)
+      console.log("  creditDueDate:", finalCreditDueDate)
       console.log("  creditPaid:", data.paymentType === "cash")
       
       // Crear movimiento con fecha en zona horaria de Colombia
@@ -163,7 +173,9 @@ export async function POST(req: NextRequest) {
           cashAmount: finalCashAmount,
           creditAmount: finalCreditAmount,
           creditDays: finalCreditDays,
+          creditDueDate: finalCreditDueDate,
           creditPaid: data.paymentType === "cash",
+          creditPaidDate: null, // Se establecerá cuando se marque como pagado
           hasShipping: data.hasShipping || false,
           shippingCost: data.shippingCost,
           shippingPaidBy: data.shippingPaidBy,

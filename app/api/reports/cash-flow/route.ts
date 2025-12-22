@@ -68,9 +68,9 @@ export async function GET(req: NextRequest) {
       return sum
     }, 0)
     
-    // Calcular créditos pagados
+    // Calcular créditos pagados (solo los que tienen creditPaid = true y creditPaidDate)
     const paidCredits = salesMovements
-      .filter(m => m.creditPaid && (m.paymentType === "credit" || m.paymentType === "mixed"))
+      .filter(m => m.creditPaid && m.creditPaidDate && (m.paymentType === "credit" || m.paymentType === "mixed"))
       .reduce((sum, m) => {
         if (m.paymentType === "credit") {
           return sum + Number(m.creditAmount || m.totalAmount)

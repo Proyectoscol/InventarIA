@@ -71,7 +71,9 @@ export interface Movement {
   cashAmount?: number
   creditAmount?: number
   creditDays?: number
+  creditDueDate?: Date
   creditPaid: boolean
+  creditPaidDate?: Date
   hasShipping: boolean
   shippingCost?: number
   shippingPaidBy?: "seller" | "customer"

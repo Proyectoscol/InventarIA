@@ -173,7 +173,9 @@ model Movement {
   cashAmount        Decimal?  @db.Decimal(15, 2) // Monto pagado en contado
   creditAmount      Decimal?  @db.Decimal(15, 2) // Monto a crédito
   creditDays        Int?      // Días de plazo para el crédito (5, 15, 20, 30, o personalizado)
+  creditDueDate     DateTime? // Fecha de vencimiento del crédito (movementDate + creditDays)
   creditPaid        Boolean   @default(false) // Si el crédito ya fue pagado
+  creditPaidDate    DateTime? // Fecha en que se pagó el crédito (solo cuando creditPaid = true)
   
   // Envío
   hasShipping       Boolean   @default(false)

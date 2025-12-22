@@ -88,7 +88,8 @@ export async function GET(req: NextRequest) {
       return sum
     }, 0)
     
-    // Créditos pendientes (solo los que no han sido pagados)
+    // Créditos pendientes (solo los que NO han sido pagados - creditPaid = false)
+    // NO incluir créditos vencidos automáticamente, solo cuando se marquen como pagados
     const pendingCredit = movements
       .filter(m => !m.creditPaid && (m.paymentType === "credit" || m.paymentType === "mixed"))
       .reduce((sum, m) => {
