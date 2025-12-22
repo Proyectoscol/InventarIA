@@ -20,9 +20,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "companyId, year y month requeridos" }, { status: 400 })
     }
 
-    // Calcular rango de fechas del mes
-    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1)
-    const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59)
+    // Calcular rango de fechas del mes en UTC
+    // El mes se interpreta en zona horaria de Colombia
+    // Inicio del mes: 1er día 00:00 Colombia = 05:00 UTC del mismo día
+    const startDate = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, 1, 5, 0, 0, 0))
+    // Fin del mes: último día 23:59 Colombia = 04:59 UTC del día siguiente
+    const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate()
+    const endDate = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, lastDay + 1, 4, 59, 59, 999))
 
     // Obtener todos los movimientos del mes
     const movements = await prisma.movement.findMany({

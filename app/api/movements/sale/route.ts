@@ -122,8 +122,9 @@ export async function POST(req: NextRequest) {
           shippingCost: data.shippingCost,
           shippingPaidBy: data.shippingPaidBy,
           customerId: data.customerId && data.customerId.trim() !== "" ? data.customerId : null,
-          notes: data.notes,
-          movementDate: data.movementDate ? new Date(data.movementDate) : getColombiaNow()
+          notes: data.notes
+          // movementDate se establece automáticamente por el schema con default: now()
+          // Si se necesita una fecha específica, se puede pasar en data.movementDate
         }
       })
       
