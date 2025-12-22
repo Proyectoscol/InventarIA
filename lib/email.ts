@@ -1,38 +1,44 @@
-import nodemailer from "nodemailer"
+import Mailgun from "mailgun.js"
+import formData from "form-data"
 
-// Configurar transporter de nodemailer con Mailgun SMTP
-// IMPORTANTE: Para Mailgun SMTP, necesitas usar las credenciales SMTP específicas del dashboard
-// NO uses el API key de la REST API. Las credenciales SMTP tienen formato:
-// - Username: postmaster@your-domain.mailgun.org (o el email verificado en tu dominio)
-// - Password: La contraseña SMTP específica (diferente del API key)
-// 
-// Si SMTP_USER no está configurado, intenta usar SMTP_ADMIN_EMAIL como fallback
-// pero es mejor configurar SMTP_USER explícitamente con el formato correcto
-const smtpUser = process.env.SMTP_USER || process.env.SMTP_ADMIN_EMAIL || ""
-
-if (!smtpUser || !smtpUser.includes("@")) {
-  console.warn("⚠️  SMTP_USER no es un email válido. Mailgun SMTP requiere un email como username.")
-  console.warn("⚠️  Configura SMTP_USER con el formato: postmaster@your-domain.mailgun.org")
+// Configurar cliente de Mailgun usando la API REST
+// Usa el API key directamente (SMTP_USER=api, SMTP_PASS=API_KEY)
+// Extraer el dominio del email de administración
+const getDomainFromEmail = (email: string): string => {
+  const match = email.match(/@(.+)/)
+  if (match) {
+    // Si es un email de Mailgun (ej: noreply@notify.technocol.co)
+    // El dominio puede ser el dominio verificado en Mailgun
+    // Por defecto, intentamos extraer el dominio después de @
+    return match[1]
+  }
+  return ""
 }
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.mailgun.org",
-  port: parseInt(process.env.SMTP_PORT || "587"),
-  secure: false, // true para 465, false para otros puertos
-  auth: {
-    user: smtpUser,
-    pass: process.env.SMTP_PASS || ""
-  }
-})
+// Función para obtener el cliente de Mailgun (lazy initialization)
+function getMailgunClient() {
+  const mailgunDomain = process.env.MAILGUN_DOMAIN || getDomainFromEmail(process.env.SMTP_ADMIN_EMAIL || "")
+  const mailgunApiKey = process.env.SMTP_PASS || ""
+  const mailgunRegion = process.env.SMTP_HOST?.includes("eu") ? "EU" : "US"
 
-// Verificar conexión al inicializar
-transporter.verify(function (error, success) {
-  if (error) {
-    console.error("❌ Error en configuración SMTP:", error)
-  } else {
-    console.log("✅ Servidor SMTP listo para enviar emails")
+  if (!mailgunApiKey) {
+    throw new Error("MAILGUN_API_KEY (SMTP_PASS) no está configurado")
   }
-})
+
+  if (!mailgunDomain) {
+    throw new Error("MAILGUN_DOMAIN no está configurado y no se pudo extraer del SMTP_ADMIN_EMAIL")
+  }
+
+  // Inicializar cliente de Mailgun
+  const mailgun = new Mailgun(formData)
+  const mg = mailgun.client({
+    username: "api",
+    key: mailgunApiKey,
+    url: mailgunRegion === "EU" ? "https://api.eu.mailgun.net" : "https://api.mailgun.net"
+  })
+
+  return { mg, domain: mailgunDomain }
+}
 
 export async function sendStockAlert({
   to,
@@ -91,33 +97,32 @@ Este es un mensaje automático del Sistema de Inventario.
   `
 
   try {
-    // Enviar a múltiples destinatarios
-    const mailOptions = {
+    const { mg, domain } = getMailgunClient()
+    
+    console.log("📧 Intentando enviar alerta de stock a:", to.join(", "))
+    console.log("📧 Configuración Mailgun:", {
+      domain: domain,
+      from: process.env.SMTP_ADMIN_EMAIL
+    })
+
+    // Enviar usando la API REST de Mailgun
+    const messageData = {
       from: `"${process.env.SMTP_SENDER_NAME || "Sistema Inventario"}" <${process.env.SMTP_ADMIN_EMAIL}>`,
-      to: to.join(", "),
+      to: to,
       subject: `🔴 Alerta: Stock Bajo - ${productName}`,
       text: emailBody,
       html: htmlBody
     }
 
-    console.log("📧 Intentando enviar alerta de stock a:", to.join(", "))
-    console.log("📧 Configuración SMTP:", {
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      user: process.env.SMTP_USER,
-      from: process.env.SMTP_ADMIN_EMAIL
-    })
-
-    const info = await transporter.sendMail(mailOptions)
-    console.log(`✅ Alerta enviada para ${productName} a ${to.join(", ")}:`, info.messageId)
-    return { success: true, messageId: info.messageId }
+    const response = await mg.messages.create(domain, messageData)
+    console.log(`✅ Alerta enviada para ${productName} a ${to.join(", ")}:`, response.id)
+    return { success: true, messageId: response.id }
   } catch (error: any) {
     console.error("❌ Error enviando email de stock:", error)
     console.error("❌ Detalles del error:", {
       message: error.message,
-      code: error.code,
-      response: error.response,
-      responseCode: error.responseCode
+      status: error.status,
+      details: error.details
     })
     throw error
   }
@@ -186,25 +191,28 @@ Este es un mensaje automático del Sistema de Inventario.
   `
 
   try {
-    const mailOptions = {
+    const { mg, domain } = getMailgunClient()
+    
+    console.log("📧 Intentando enviar alerta de créditos a:", to.join(", "))
+    
+    // Enviar usando la API REST de Mailgun
+    const messageData = {
       from: `"${process.env.SMTP_SENDER_NAME || "Sistema Inventario"}" <${process.env.SMTP_ADMIN_EMAIL}>`,
-      to: to.join(", "),
+      to: to,
       subject: subject,
       text: emailBody,
       html: htmlBody
     }
 
-    console.log("📧 Intentando enviar alerta de créditos a:", to.join(", "))
-    const info = await transporter.sendMail(mailOptions)
-    console.log(`✅ Alerta de créditos enviada a ${to.join(", ")}:`, info.messageId)
-    return { success: true, messageId: info.messageId }
+    const response = await mg.messages.create(domain, messageData)
+    console.log(`✅ Alerta de créditos enviada a ${to.join(", ")}:`, response.id)
+    return { success: true, messageId: response.id }
   } catch (error: any) {
     console.error("❌ Error enviando email de créditos:", error)
     console.error("❌ Detalles del error:", {
       message: error.message,
-      code: error.code,
-      response: error.response,
-      responseCode: error.responseCode
+      status: error.status,
+      details: error.details
     })
     throw error
   }
@@ -212,24 +220,28 @@ Este es un mensaje automático del Sistema de Inventario.
 
 export async function sendTestEmail(to: string) {
   try {
-    const mailOptions = {
+    const { mg, domain } = getMailgunClient()
+    
+    console.log("📧 Enviando email de prueba a:", to)
+    
+    // Enviar usando la API REST de Mailgun
+    const messageData = {
       from: `"${process.env.SMTP_SENDER_NAME || "Sistema Inventario"}" <${process.env.SMTP_ADMIN_EMAIL}>`,
-      to: to,
+      to: [to],
       subject: "Prueba de Configuración - Sistema de Inventario",
       text: "¡La configuración de email está funcionando correctamente!",
       html: "<p>¡La configuración de email está funcionando correctamente!</p>"
     }
 
-    console.log("📧 Enviando email de prueba a:", to)
-    const info = await transporter.sendMail(mailOptions)
-    console.log("✅ Email de prueba enviado:", info.messageId)
-    return { success: true, messageId: info.messageId }
+    const response = await mg.messages.create(domain, messageData)
+    console.log("✅ Email de prueba enviado:", response.id)
+    return { success: true, messageId: response.id }
   } catch (error: any) {
     console.error("❌ Error en email de prueba:", error)
     console.error("❌ Detalles:", {
       message: error.message,
-      code: error.code,
-      response: error.response
+      status: error.status,
+      details: error.details
     })
     return { success: false, error: error.message }
   }
