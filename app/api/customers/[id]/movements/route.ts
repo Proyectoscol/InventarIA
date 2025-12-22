@@ -52,30 +52,43 @@ export async function GET(
     // Calcular resumen
     const totalSales = movements.reduce((sum, m) => sum + Number(m.totalAmount), 0)
     const totalProfit = movements.reduce((sum, m) => sum + Number(m.profit || 0), 0)
-    // Para contado: si es cash, el cashAmount debería ser el totalAmount, si no está guardado, usar totalAmount
+    
+    // Para contado: basarse en paymentType
     const totalCash = movements.reduce((sum, m) => {
       if (m.paymentType === "cash") {
-        return sum + Number(m.cashAmount || m.totalAmount)
+        // Si es contado, usar cashAmount si existe, sino usar totalAmount
+        return sum + Number(m.cashAmount ?? m.totalAmount)
       } else if (m.paymentType === "mixed") {
-        return sum + Number(m.cashAmount || 0)
+        // Si es mixto, usar cashAmount (debe estar guardado)
+        return sum + Number(m.cashAmount ?? 0)
       }
+      // Si es crédito, no sumar nada a contado
       return sum
     }, 0)
+    
+    // Para crédito: basarse en paymentType
     const totalCredit = movements.reduce((sum, m) => {
       if (m.paymentType === "credit") {
-        return sum + Number(m.creditAmount || m.totalAmount)
+        // Si es crédito, usar creditAmount si existe, sino usar totalAmount
+        return sum + Number(m.creditAmount ?? m.totalAmount)
       } else if (m.paymentType === "mixed") {
-        return sum + Number(m.creditAmount || 0)
+        // Si es mixto, usar creditAmount (debe estar guardado)
+        return sum + Number(m.creditAmount ?? 0)
       }
+      // Si es contado, no sumar nada a crédito
       return sum
     }, 0)
+    
+    // Créditos pendientes (solo los que no han sido pagados)
     const pendingCredit = movements
       .filter(m => !m.creditPaid && (m.paymentType === "credit" || m.paymentType === "mixed"))
       .reduce((sum, m) => {
         if (m.paymentType === "credit") {
-          return sum + Number(m.creditAmount || m.totalAmount)
+          // Si es crédito puro, usar creditAmount si existe, sino usar totalAmount
+          return sum + Number(m.creditAmount ?? m.totalAmount)
         } else if (m.paymentType === "mixed") {
-          return sum + Number(m.creditAmount || 0)
+          // Si es mixto, usar creditAmount (debe estar guardado)
+          return sum + Number(m.creditAmount ?? 0)
         }
         return sum
       }, 0)
@@ -86,8 +99,8 @@ export async function GET(
         ...m,
         unitPrice: Number(m.unitPrice),
         totalAmount: Number(m.totalAmount),
-        cashAmount: m.paymentType === "cash" ? Number(m.cashAmount || m.totalAmount) : (m.paymentType === "mixed" ? Number(m.cashAmount || 0) : null),
-        creditAmount: m.paymentType === "credit" ? Number(m.creditAmount || m.totalAmount) : (m.paymentType === "mixed" ? Number(m.creditAmount || 0) : null),
+        cashAmount: m.paymentType === "cash" ? Number(m.cashAmount ?? m.totalAmount) : (m.paymentType === "mixed" ? Number(m.cashAmount ?? 0) : null),
+        creditAmount: m.paymentType === "credit" ? Number(m.creditAmount ?? m.totalAmount) : (m.paymentType === "mixed" ? Number(m.creditAmount ?? 0) : null),
         creditDays: m.creditDays ? Number(m.creditDays) : null,
         shippingCost: m.shippingCost ? Number(m.shippingCost) : null,
         unitCost: m.unitCost ? Number(m.unitCost) : null,

@@ -62,34 +62,42 @@ export async function GET(req: NextRequest) {
       _count: true
     })
     
-    // Calcular contado correctamente: si es cash, usar totalAmount si cashAmount no está guardado
+    // Calcular contado correctamente basándose en paymentType
     const calculatedCashAmount = movements.reduce((sum, m) => {
       if (m.paymentType === "cash") {
-        return sum + Number(m.cashAmount || m.totalAmount)
+        // Si es contado, usar cashAmount si existe, sino usar totalAmount
+        return sum + Number(m.cashAmount ?? m.totalAmount)
       } else if (m.paymentType === "mixed") {
-        return sum + Number(m.cashAmount || 0)
+        // Si es mixto, usar cashAmount (debe estar guardado)
+        return sum + Number(m.cashAmount ?? 0)
       }
+      // Si es crédito, no sumar nada a contado
       return sum
     }, 0)
     
-    // Calcular crédito correctamente
+    // Calcular crédito correctamente basándose en paymentType
     const calculatedCreditAmount = movements.reduce((sum, m) => {
       if (m.paymentType === "credit") {
-        return sum + Number(m.creditAmount || m.totalAmount)
+        // Si es crédito, usar creditAmount si existe, sino usar totalAmount
+        return sum + Number(m.creditAmount ?? m.totalAmount)
       } else if (m.paymentType === "mixed") {
-        return sum + Number(m.creditAmount || 0)
+        // Si es mixto, usar creditAmount (debe estar guardado)
+        return sum + Number(m.creditAmount ?? 0)
       }
+      // Si es contado, no sumar nada a crédito
       return sum
     }, 0)
     
-    // Créditos pendientes
+    // Créditos pendientes (solo los que no han sido pagados)
     const pendingCredit = movements
       .filter(m => !m.creditPaid && (m.paymentType === "credit" || m.paymentType === "mixed"))
       .reduce((sum, m) => {
         if (m.paymentType === "credit") {
-          return sum + Number(m.creditAmount || m.totalAmount)
+          // Si es crédito puro, usar creditAmount si existe, sino usar totalAmount
+          return sum + Number(m.creditAmount ?? m.totalAmount)
         } else if (m.paymentType === "mixed") {
-          return sum + Number(m.creditAmount || 0)
+          // Si es mixto, usar creditAmount (debe estar guardado)
+          return sum + Number(m.creditAmount ?? 0)
         }
         return sum
       }, 0)
