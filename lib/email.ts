@@ -1,9 +1,19 @@
 import nodemailer from "nodemailer"
 
 // Configurar transporter de nodemailer con Mailgun SMTP
-// Para Mailgun, el usuario debe ser un email válido, no solo "api"
-// Si SMTP_USER no es un email, usar SMTP_ADMIN_EMAIL como fallback
+// IMPORTANTE: Para Mailgun SMTP, necesitas usar las credenciales SMTP específicas del dashboard
+// NO uses el API key de la REST API. Las credenciales SMTP tienen formato:
+// - Username: postmaster@your-domain.mailgun.org (o el email verificado en tu dominio)
+// - Password: La contraseña SMTP específica (diferente del API key)
+// 
+// Si SMTP_USER no está configurado, intenta usar SMTP_ADMIN_EMAIL como fallback
+// pero es mejor configurar SMTP_USER explícitamente con el formato correcto
 const smtpUser = process.env.SMTP_USER || process.env.SMTP_ADMIN_EMAIL || ""
+
+if (!smtpUser || !smtpUser.includes("@")) {
+  console.warn("⚠️  SMTP_USER no es un email válido. Mailgun SMTP requiere un email como username.")
+  console.warn("⚠️  Configura SMTP_USER con el formato: postmaster@your-domain.mailgun.org")
+}
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.mailgun.org",
