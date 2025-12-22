@@ -54,21 +54,12 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
     }
   })
 
-  // Cargar producto pre-seleccionado
+  // Pre-seleccionar bodega si viene de inventario
   useEffect(() => {
-    if (preselectedProductId && companyId) {
-      fetch(`/api/companies/${companyId}/products`)
-        .then(res => res.json())
-        .then(data => {
-          const product = data.find((p: any) => p.id === preselectedProductId)
-          if (product) {
-            setSelectedProduct(product)
-            setValue("productId", product.id)
-          }
-        })
-        .catch(err => console.error("Error cargando producto:", err))
+    if (preselectedWarehouseId) {
+      setValue("warehouseId", preselectedWarehouseId)
     }
-  }, [preselectedProductId, companyId, setValue])
+  }, [preselectedWarehouseId, setValue])
 
   const priceType = watch("priceType")
   const paymentType = watch("paymentType")
@@ -135,6 +126,7 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
         <Label>Producto</Label>
         <ProductSearch
           companyId={companyId}
+          preselectedProductId={preselectedProductId}
           onSelect={(product) => {
             setSelectedProduct(product)
             setValue("productId", product.id)
