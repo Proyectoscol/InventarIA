@@ -57,9 +57,9 @@ export function CustomerForm({ companyId, customer, onSuccess, onCancel }: Custo
         return
       }
 
-      // Solicitar acceso a contactos
+      // Solicitar acceso a contactos (solo nombre y teléfono)
       const contactsManager = (navigator as any).contacts
-      const contacts = await contactsManager.select(['name', 'email', 'tel', 'address'], {
+      const contacts = await contactsManager.select(['name', 'tel'], {
         multiple: false // Solo permitir seleccionar un contacto a la vez
       })
 
@@ -72,32 +72,10 @@ export function CustomerForm({ companyId, customer, onSuccess, onCancel }: Custo
           setValue("name", name)
         }
 
-        // Extraer email
-        if (contact.email && contact.email.length > 0) {
-          const email = Array.isArray(contact.email) ? contact.email[0] : contact.email
-          setValue("email", email)
-        }
-
         // Extraer teléfono
         if (contact.tel && contact.tel.length > 0) {
           const phone = Array.isArray(contact.tel) ? contact.tel[0] : contact.tel
           setValue("phone", phone)
-        }
-
-        // Extraer dirección
-        if (contact.address && contact.address.length > 0) {
-          const addressObj = Array.isArray(contact.address) ? contact.address[0] : contact.address
-          // Formatear dirección como string
-          const addressParts = []
-          if (addressObj.streetAddress) addressParts.push(addressObj.streetAddress)
-          if (addressObj.locality) addressParts.push(addressObj.locality)
-          if (addressObj.region) addressParts.push(addressObj.region)
-          if (addressObj.postalCode) addressParts.push(addressObj.postalCode)
-          if (addressObj.country) addressParts.push(addressObj.country)
-          
-          if (addressParts.length > 0) {
-            setValue("address", addressParts.join(", "))
-          }
         }
 
         toast.success("✅ Contacto importado", {
@@ -181,19 +159,6 @@ export function CustomerForm({ companyId, customer, onSuccess, onCancel }: Custo
         />
         {errors.name && (
           <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>
-        )}
-      </div>
-
-      <div>
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          {...register("email")}
-          placeholder="cliente@email.com"
-        />
-        {errors.email && (
-          <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>
         )}
       </div>
 
