@@ -70,6 +70,7 @@ export interface Movement {
   paymentType: "cash" | "credit" | "mixed"
   cashAmount?: number
   creditAmount?: number
+  creditDays?: number
   creditPaid: boolean
   hasShipping: boolean
   shippingCost?: number

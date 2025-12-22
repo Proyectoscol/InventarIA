@@ -230,7 +230,7 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
         >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="cash" id="cash" name="purchase-payment-type" />
-            <Label htmlFor="cash">Efectivo</Label>
+            <Label htmlFor="cash">Contado</Label>
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="credit" id="credit" name="purchase-payment-type" />
@@ -245,7 +245,7 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
         {paymentType === "mixed" && (
           <div className="mt-4 space-y-3 pl-6">
             <div>
-              <Label>Efectivo (COP)</Label>
+              <Label>Contado (COP)</Label>
               <CurrencyInput
                 value={watch("cashAmount") || 0}
                 onChange={(val) => setValue("cashAmount", val)}

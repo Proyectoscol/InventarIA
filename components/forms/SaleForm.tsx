@@ -60,6 +60,8 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
   const [lastSalePrice, setLastSalePrice] = useState<number | null>(null)
   const [priceInputType, setPriceInputType] = useState<"unit" | "total">("unit")
   const [totalPriceInput, setTotalPriceInput] = useState<string>("")
+  const [creditDaysType, setCreditDaysType] = useState<"preset" | "custom">("preset")
+  const [customCreditDays, setCustomCreditDays] = useState<string>("")
   
   // Actualizar lista de clientes cuando cambia el prop
   useEffect(() => {
@@ -85,8 +87,16 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
   const quantity = watch("quantity")
   const unitPrice = watch("unitPrice")
   const productId = watch("productId")
+  const creditDays = watch("creditDays")
 
   const total = (quantity || 0) * (unitPrice || 0)
+
+  // Actualizar creditAmount cuando es crédito puro
+  useEffect(() => {
+    if (paymentType === "credit" && total > 0) {
+      setValue("creditAmount", total)
+    }
+  }, [paymentType, total, setValue])
 
   // Obtener último precio de venta cuando se selecciona un producto
   useEffect(() => {
@@ -139,7 +149,10 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         body: JSON.stringify({
           ...data,
           companyId,
-          customerId: data.customerId && data.customerId.trim() !== "" ? data.customerId : null
+          customerId: data.customerId && data.customerId.trim() !== "" ? data.customerId : null,
+          // Asegurar que cashAmount y creditAmount estén correctamente definidos
+          cashAmount: paymentType === "cash" ? total : (paymentType === "mixed" ? data.cashAmount : undefined),
+          creditAmount: paymentType === "credit" ? total : (paymentType === "mixed" ? data.creditAmount : undefined)
         })
       })
 
@@ -317,11 +330,30 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         <Label>Tipo de Pago</Label>
         <RadioGroup
           value={paymentType}
-          onValueChange={(val) => setValue("paymentType", val as any)}
+          onValueChange={(val) => {
+            setValue("paymentType", val as any)
+            // Resetear valores cuando cambia el tipo de pago
+            if (val === "cash") {
+              setValue("cashAmount", undefined)
+              setValue("creditAmount", undefined)
+              setValue("creditDays", undefined)
+            } else if (val === "credit") {
+              setValue("cashAmount", undefined)
+              setValue("creditAmount", total)
+              setValue("creditDays", creditDaysType === "preset" ? 15 : parseInt(customCreditDays) || undefined)
+            } else if (val === "mixed") {
+              // Mantener valores si ya existen
+              if (!watch("cashAmount") && !watch("creditAmount")) {
+                setValue("cashAmount", total / 2)
+                setValue("creditAmount", total / 2)
+              }
+              setValue("creditDays", creditDaysType === "preset" ? 15 : parseInt(customCreditDays) || undefined)
+            }
+          }}
         >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="cash" id="cash" name="payment-type" />
-            <Label htmlFor="cash">Efectivo</Label>
+            <Label htmlFor="cash">Contado</Label>
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="credit" id="credit" name="payment-type" />
@@ -333,24 +365,129 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
           </div>
         </RadioGroup>
 
-        {paymentType === "mixed" && (
-          <div className="mt-4 space-y-3 pl-6">
+        {/* Campos para crédito */}
+        {(paymentType === "credit" || paymentType === "mixed") && (
+          <div className="mt-4 space-y-3 pl-6 border-l-2 border-primary/20">
+            {/* Días de crédito */}
             <div>
-              <Label>Efectivo (COP)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                {...register("cashAmount", { valueAsNumber: true })}
-              />
+              <Label>Plazo de Crédito (días)</Label>
+              <div className="flex gap-2 mb-2">
+                <Button
+                  type="button"
+                  variant={creditDaysType === "preset" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setCreditDaysType("preset")
+                    const currentDays = watch("creditDays") || 15
+                    if ([5, 15, 20, 30].includes(currentDays)) {
+                      setValue("creditDays", currentDays)
+                    } else {
+                      setValue("creditDays", 15)
+                    }
+                  }}
+                >
+                  Predefinido
+                </Button>
+                <Button
+                  type="button"
+                  variant={creditDaysType === "custom" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    setCreditDaysType("custom")
+                    setCustomCreditDays(watch("creditDays")?.toString() || "")
+                  }}
+                >
+                  Personalizado
+                </Button>
+              </div>
+              
+              {creditDaysType === "preset" ? (
+                <div className="grid grid-cols-4 gap-2">
+                  {[5, 15, 20, 30].map((days) => (
+                    <Button
+                      key={days}
+                      type="button"
+                      variant={watch("creditDays") === days ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setValue("creditDays", days)}
+                    >
+                      {days} días
+                    </Button>
+                  ))}
+                </div>
+              ) : (
+                <Input
+                  type="number"
+                  min="1"
+                  placeholder="Ej: 45"
+                  value={customCreditDays}
+                  onChange={(e) => {
+                    setCustomCreditDays(e.target.value)
+                    const days = parseInt(e.target.value)
+                    if (days > 0) {
+                      setValue("creditDays", days)
+                    }
+                  }}
+                />
+              )}
+              {errors.creditDays && (
+                <p className="text-sm text-red-500 mt-1">{errors.creditDays.message}</p>
+              )}
             </div>
-            <div>
-              <Label>Crédito (COP)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                {...register("creditAmount", { valueAsNumber: true })}
-              />
-            </div>
+
+            {/* Campos para mixto */}
+            {paymentType === "mixed" && (
+              <>
+                <div>
+                  <Label>Contado (COP)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    {...register("cashAmount", { 
+                      valueAsNumber: true,
+                      onChange: (e) => {
+                        const cash = parseFloat(e.target.value) || 0
+                        const credit = total - cash
+                        setValue("creditAmount", credit > 0 ? credit : 0)
+                      }
+                    })}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Total: ${total.toLocaleString("es-CO")} - Crédito: ${(watch("creditAmount") || 0).toLocaleString("es-CO")}
+                  </p>
+                </div>
+                <div>
+                  <Label>Crédito (COP)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    {...register("creditAmount", { 
+                      valueAsNumber: true,
+                      onChange: (e) => {
+                        const credit = parseFloat(e.target.value) || 0
+                        const cash = total - credit
+                        setValue("cashAmount", cash > 0 ? cash : 0)
+                      }
+                    })}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Total: ${total.toLocaleString("es-CO")} - Contado: ${(watch("cashAmount") || 0).toLocaleString("es-CO")}
+                  </p>
+                </div>
+              </>
+            )}
+
+            {/* Para crédito puro, mostrar el total automáticamente */}
+            {paymentType === "credit" && (
+              <div className="p-3 bg-muted rounded-md">
+                <p className="text-sm">
+                  <span className="font-medium">Monto a crédito:</span> ${total.toLocaleString("es-CO")} COP
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Este monto se registrará como crédito pendiente
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

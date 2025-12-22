@@ -82,7 +82,7 @@ export default function StatsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>💵 Efectivo</CardTitle>
+              <CardTitle>💵 Contado</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold text-green-600">

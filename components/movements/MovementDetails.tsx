@@ -83,7 +83,7 @@ export function MovementDetails({ movement }: MovementDetailsProps) {
           <div>
             <p className="text-sm text-muted-foreground">Tipo de Pago</p>
             <p>
-              {movement.paymentType === "cash" && "Efectivo"}
+              {movement.paymentType === "cash" && "Contado"}
               {movement.paymentType === "credit" && "Crédito"}
               {movement.paymentType === "mixed" && "Mixto"}
             </p>
@@ -91,7 +91,7 @@ export function MovementDetails({ movement }: MovementDetailsProps) {
           
           {movement.cashAmount && (
             <div>
-              <p className="text-sm text-muted-foreground">Efectivo</p>
+              <p className="text-sm text-muted-foreground">Contado</p>
               <p>{formatCurrency(Number(movement.cashAmount))}</p>
             </div>
           )}

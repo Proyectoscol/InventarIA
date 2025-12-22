@@ -170,8 +170,9 @@ model Movement {
   
   // Información de pago
   paymentType       String    // 'cash', 'credit', 'mixed'
-  cashAmount        Decimal?  @db.Decimal(15, 2) // Monto pagado en efectivo
+  cashAmount        Decimal?  @db.Decimal(15, 2) // Monto pagado en contado
   creditAmount      Decimal?  @db.Decimal(15, 2) // Monto a crédito
+  creditDays        Int?      // Días de plazo para el crédito (5, 15, 20, 30, o personalizado)
   creditPaid        Boolean   @default(false) // Si el crédito ya fue pagado
   
   // Envío

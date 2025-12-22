@@ -52,11 +52,33 @@ export async function GET(
     // Calcular resumen
     const totalSales = movements.reduce((sum, m) => sum + Number(m.totalAmount), 0)
     const totalProfit = movements.reduce((sum, m) => sum + Number(m.profit || 0), 0)
-    const totalCash = movements.reduce((sum, m) => sum + Number(m.cashAmount || 0), 0)
-    const totalCredit = movements.reduce((sum, m) => sum + Number(m.creditAmount || 0), 0)
+    // Para contado: si es cash, el cashAmount debería ser el totalAmount, si no está guardado, usar totalAmount
+    const totalCash = movements.reduce((sum, m) => {
+      if (m.paymentType === "cash") {
+        return sum + Number(m.cashAmount || m.totalAmount)
+      } else if (m.paymentType === "mixed") {
+        return sum + Number(m.cashAmount || 0)
+      }
+      return sum
+    }, 0)
+    const totalCredit = movements.reduce((sum, m) => {
+      if (m.paymentType === "credit") {
+        return sum + Number(m.creditAmount || m.totalAmount)
+      } else if (m.paymentType === "mixed") {
+        return sum + Number(m.creditAmount || 0)
+      }
+      return sum
+    }, 0)
     const pendingCredit = movements
-      .filter(m => !m.creditPaid)
-      .reduce((sum, m) => sum + Number(m.creditAmount || 0), 0)
+      .filter(m => !m.creditPaid && (m.paymentType === "credit" || m.paymentType === "mixed"))
+      .reduce((sum, m) => {
+        if (m.paymentType === "credit") {
+          return sum + Number(m.creditAmount || m.totalAmount)
+        } else if (m.paymentType === "mixed") {
+          return sum + Number(m.creditAmount || 0)
+        }
+        return sum
+      }, 0)
     const totalQuantity = movements.reduce((sum, m) => sum + m.quantity, 0)
 
     return NextResponse.json({
@@ -64,8 +86,9 @@ export async function GET(
         ...m,
         unitPrice: Number(m.unitPrice),
         totalAmount: Number(m.totalAmount),
-        cashAmount: m.cashAmount ? Number(m.cashAmount) : null,
-        creditAmount: m.creditAmount ? Number(m.creditAmount) : null,
+        cashAmount: m.paymentType === "cash" ? Number(m.cashAmount || m.totalAmount) : (m.paymentType === "mixed" ? Number(m.cashAmount || 0) : null),
+        creditAmount: m.paymentType === "credit" ? Number(m.creditAmount || m.totalAmount) : (m.paymentType === "mixed" ? Number(m.creditAmount || 0) : null),
+        creditDays: m.creditDays ? Number(m.creditDays) : null,
         shippingCost: m.shippingCost ? Number(m.shippingCost) : null,
         unitCost: m.unitCost ? Number(m.unitCost) : null,
         profit: m.profit ? Number(m.profit) : null,

@@ -354,7 +354,7 @@ export function QuickProductCreationModal({
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="cash" id="purchase-cash" name="purchase-payment-type" />
-                    <Label htmlFor="purchase-cash" className="text-base font-normal cursor-pointer">Efectivo</Label>
+                    <Label htmlFor="purchase-cash" className="text-base font-normal cursor-pointer">Contado</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="credit" id="purchase-credit" name="purchase-payment-type" />
@@ -369,7 +369,7 @@ export function QuickProductCreationModal({
                 {purchaseForm.watch("paymentType") === "mixed" && (
                   <div className="mt-4 space-y-3 pl-6">
                     <div>
-                      <Label className="text-base">Efectivo (COP)</Label>
+                      <Label className="text-base">Contado (COP)</Label>
                       <Input
                         type="number"
                         step="0.01"

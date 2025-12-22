@@ -124,7 +124,7 @@ export function CustomerDetailsModal({ customer, companyId, onClose }: CustomerD
               <Card className="bg-yellow-50 border-yellow-200">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <DollarSign className="h-4 w-4 text-yellow-600" /> Efectivo Recibido
+                    <DollarSign className="h-4 w-4 text-yellow-600" /> Contado Recibido
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -198,13 +198,16 @@ export function CustomerDetailsModal({ customer, companyId, onClose }: CustomerD
                           <p><span className="font-medium">Ganancia:</span> ${movement.profit?.toLocaleString("es-CO")}</p>
                         )}
                         <p><span className="font-medium">Pago:</span> {
-                          movement.paymentType === "cash" ? "Efectivo" :
+                          movement.paymentType === "cash" ? "Contado" :
                           movement.paymentType === "credit" ? "Crédito" :
                           "Mixto"
                         }</p>
+                        {movement.creditDays && (
+                          <p><span className="font-medium">Plazo:</span> {movement.creditDays} días</p>
+                        )}
                         {movement.paymentType === "mixed" && (
                           <>
-                            <p><span className="font-medium">Efectivo:</span> ${movement.cashAmount?.toLocaleString("es-CO")}</p>
+                            <p><span className="font-medium">Contado:</span> ${movement.cashAmount?.toLocaleString("es-CO")}</p>
                             <p><span className="font-medium">Crédito:</span> ${movement.creditAmount?.toLocaleString("es-CO")}</p>
                           </>
                         )}

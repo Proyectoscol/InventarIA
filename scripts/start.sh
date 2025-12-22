@@ -222,6 +222,7 @@ else
         \"paymentType\" TEXT NOT NULL,
         \"cashAmount\" DECIMAL(15,2),
         \"creditAmount\" DECIMAL(15,2),
+        \"creditDays\" INTEGER,
         \"creditPaid\" BOOLEAN NOT NULL DEFAULT false,
         \"hasShipping\" BOOLEAN NOT NULL DEFAULT false,
         \"shippingCost\" DECIMAL(15,2),

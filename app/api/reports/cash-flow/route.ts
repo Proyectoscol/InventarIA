@@ -30,56 +30,103 @@ export async function GET(req: NextRequest) {
       }
     }
     
-    // Ventas (entradas de efectivo)
-    const sales = await prisma.movement.aggregate({
+    // Obtener movimientos para cálculo manual
+    const salesMovements = await prisma.movement.findMany({
       where: {
         ...whereClause,
         type: "sale"
       },
-      _sum: {
+      select: {
+        paymentType: true,
         cashAmount: true,
         creditAmount: true,
-        totalAmount: true
+        totalAmount: true,
+        creditPaid: true
       }
     })
     
-    // Compras (salidas de efectivo)
-    const purchases = await prisma.movement.aggregate({
+    const purchaseMovements = await prisma.movement.findMany({
       where: {
         ...whereClause,
         type: "purchase"
       },
-      _sum: {
+      select: {
+        paymentType: true,
         cashAmount: true,
         creditAmount: true,
         totalAmount: true
       }
     })
     
-    // Créditos pagados
-    const paidCredits = await prisma.movement.aggregate({
-      where: {
-        ...whereClause,
-        type: "sale",
-        creditPaid: true,
-        creditAmount: { gt: 0 }
-      },
-      _sum: {
-        creditAmount: true
+    // Calcular contado recibido de ventas
+    const salesCashAmount = salesMovements.reduce((sum, m) => {
+      if (m.paymentType === "cash") {
+        return sum + Number(m.cashAmount || m.totalAmount)
+      } else if (m.paymentType === "mixed") {
+        return sum + Number(m.cashAmount || 0)
       }
-    })
+      return sum
+    }, 0)
     
-    const cashIn = Number(sales._sum.cashAmount || 0) + Number(paidCredits._sum.creditAmount || 0)
-    const cashOut = Number(purchases._sum.cashAmount || 0) + Number(purchases._sum.creditAmount || 0)
+    // Calcular créditos pagados
+    const paidCredits = salesMovements
+      .filter(m => m.creditPaid && (m.paymentType === "credit" || m.paymentType === "mixed"))
+      .reduce((sum, m) => {
+        if (m.paymentType === "credit") {
+          return sum + Number(m.creditAmount || m.totalAmount)
+        } else if (m.paymentType === "mixed") {
+          return sum + Number(m.creditAmount || 0)
+        }
+        return sum
+      }, 0)
+    
+    // Calcular contado pagado en compras
+    const purchasesCashAmount = purchaseMovements.reduce((sum, m) => {
+      if (m.paymentType === "cash") {
+        return sum + Number(m.cashAmount || m.totalAmount)
+      } else if (m.paymentType === "mixed") {
+        return sum + Number(m.cashAmount || 0)
+      }
+      return sum
+    }, 0)
+    
+    // Calcular crédito pagado en compras
+    const purchasesCreditAmount = purchaseMovements.reduce((sum, m) => {
+      if (m.paymentType === "credit") {
+        return sum + Number(m.creditAmount || m.totalAmount)
+      } else if (m.paymentType === "mixed") {
+        return sum + Number(m.creditAmount || 0)
+      }
+      return sum
+    }, 0)
+    
+    const cashIn = salesCashAmount + paidCredits
+    const cashOut = purchasesCashAmount + purchasesCreditAmount
     const netCashFlow = cashIn - cashOut
+    
+    // Totales para referencia
+    const totalSales = salesMovements.reduce((sum, m) => sum + Number(m.totalAmount), 0)
+    const totalPurchases = purchaseMovements.reduce((sum, m) => sum + Number(m.totalAmount), 0)
+    
+    // Créditos pendientes
+    const pendingCredits = salesMovements
+      .filter(m => !m.creditPaid && (m.paymentType === "credit" || m.paymentType === "mixed"))
+      .reduce((sum, m) => {
+        if (m.paymentType === "credit") {
+          return sum + Number(m.creditAmount || m.totalAmount)
+        } else if (m.paymentType === "mixed") {
+          return sum + Number(m.creditAmount || 0)
+        }
+        return sum
+      }, 0)
     
     return NextResponse.json({
       cashIn,
       cashOut,
       netCashFlow,
-      pendingCredits: Number(sales._sum.creditAmount || 0) - Number(paidCredits._sum.creditAmount || 0),
-      totalSales: Number(sales._sum.totalAmount || 0),
-      totalPurchases: Number(purchases._sum.totalAmount || 0)
+      pendingCredits,
+      totalSales,
+      totalPurchases
     })
   } catch (error: any) {
     console.error("Error en reporte de flujo de caja:", error)

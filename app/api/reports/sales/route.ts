@@ -62,17 +62,37 @@ export async function GET(req: NextRequest) {
       _count: true
     })
     
-    // Créditos pendientes
-    const pendingCredit = await prisma.movement.aggregate({
-      where: {
-        ...whereClause,
-        creditPaid: false,
-        creditAmount: { gt: 0 }
-      },
-      _sum: {
-        creditAmount: true
+    // Calcular contado correctamente: si es cash, usar totalAmount si cashAmount no está guardado
+    const calculatedCashAmount = movements.reduce((sum, m) => {
+      if (m.paymentType === "cash") {
+        return sum + Number(m.cashAmount || m.totalAmount)
+      } else if (m.paymentType === "mixed") {
+        return sum + Number(m.cashAmount || 0)
       }
-    })
+      return sum
+    }, 0)
+    
+    // Calcular crédito correctamente
+    const calculatedCreditAmount = movements.reduce((sum, m) => {
+      if (m.paymentType === "credit") {
+        return sum + Number(m.creditAmount || m.totalAmount)
+      } else if (m.paymentType === "mixed") {
+        return sum + Number(m.creditAmount || 0)
+      }
+      return sum
+    }, 0)
+    
+    // Créditos pendientes
+    const pendingCredit = movements
+      .filter(m => !m.creditPaid && (m.paymentType === "credit" || m.paymentType === "mixed"))
+      .reduce((sum, m) => {
+        if (m.paymentType === "credit") {
+          return sum + Number(m.creditAmount || m.totalAmount)
+        } else if (m.paymentType === "mixed") {
+          return sum + Number(m.creditAmount || 0)
+        }
+        return sum
+      }, 0)
     
     // Ventas por día (simplificado)
     const byDayMap = new Map<string, number>()
@@ -89,9 +109,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       movements,
       totalAmount: Number(totals._sum.totalAmount || 0),
-      cashAmount: Number(totals._sum.cashAmount || 0),
-      creditAmount: Number(totals._sum.creditAmount || 0),
-      pendingCredit: Number(pendingCredit._sum.creditAmount || 0),
+      cashAmount: calculatedCashAmount, // Usar cálculo manual
+      creditAmount: calculatedCreditAmount, // Usar cálculo manual
+      pendingCredit: pendingCredit, // Usar cálculo manual
       totalQuantity: totals._sum.quantity || 0,
       count: totals._count,
       byDay

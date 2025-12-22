@@ -49,7 +49,7 @@ export function StatsPanel({ companyId, dateRange, stats }: StatsPanelProps) {
               </p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Efectivo</p>
+              <p className="text-sm text-muted-foreground">Contado</p>
               <p className="text-2xl font-bold text-green-600">
                 {formatCurrency(stats.sales.cashAmount)}
               </p>
