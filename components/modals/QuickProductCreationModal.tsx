@@ -33,6 +33,9 @@ type PurchaseFormData = {
   notes?: string
 }
 
+// Schema de validación para compra sin productId (ya lo tenemos en el estado)
+const purchaseFormSchema = purchaseSchema.omit({ productId: true })
+
 interface QuickProductCreationModalProps {
   companyId: string
   warehouses: Array<{ id: string; name: string }>
@@ -64,8 +67,8 @@ export function QuickProductCreationModal({
   })
 
   // Formulario de compra (Paso 2)
-  const purchaseForm = useForm<PurchaseFormData>({
-    resolver: zodResolver(purchaseSchema),
+  const purchaseForm = useForm<Omit<PurchaseFormData, "productId">>({
+    resolver: zodResolver(purchaseFormSchema),
     defaultValues: {
       priceType: "unit",
       paymentType: "cash"
