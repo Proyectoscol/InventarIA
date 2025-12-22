@@ -28,44 +28,53 @@ export function ProductSearch({
   disabled = false
 }: ProductSearchProps) {
   const [search, setSearch] = useState("")
-  const [products, setProducts] = useState<Product[]>([])
+  const [allProducts, setAllProducts] = useState<Product[]>([])
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
   const [showResults, setShowResults] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const debouncedSearch = useDebounce(search, 300)
 
-  // Buscar productos cuando el usuario escribe
+  // Cargar todos los productos al montar el componente
   useEffect(() => {
-    if (debouncedSearch.length < 1) {
-      setProducts([])
-      setShowResults(false)
-      return
-    }
-
-    const fetchProducts = async () => {
+    const fetchAllProducts = async () => {
       setLoading(true)
       try {
-        const res = await fetch(
-          `/api/companies/${companyId}/products/search?q=${encodeURIComponent(debouncedSearch)}`
-        )
+        const res = await fetch(`/api/companies/${companyId}/products`)
         if (res.ok) {
           const data = await res.json()
-          setProducts(data)
-          // Mostrar resultados si hay búsqueda activa
-          if (debouncedSearch.length >= 1) {
-            setShowResults(true)
-          }
+          // Ordenar alfabéticamente
+          const sorted = data.sort((a: Product, b: Product) => 
+            a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+          )
+          setAllProducts(sorted)
+          setFilteredProducts(sorted)
         }
       } catch (error) {
-        console.error("Error buscando productos:", error)
+        console.error("Error cargando productos:", error)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchProducts()
-  }, [debouncedSearch, companyId])
+    if (companyId) {
+      fetchAllProducts()
+    }
+  }, [companyId])
+
+  // Filtrar productos localmente cuando el usuario escribe
+  useEffect(() => {
+    if (search.trim().length === 0) {
+      // Si no hay búsqueda, mostrar todos los productos
+      setFilteredProducts(allProducts)
+    } else {
+      // Filtrar productos que coincidan con la búsqueda
+      const filtered = allProducts.filter(product =>
+        product.nameLower.includes(search.toLowerCase())
+      )
+      setFilteredProducts(filtered)
+    }
+  }, [search, allProducts])
 
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
@@ -99,15 +108,13 @@ export function ProductSearch({
     const value = e.target.value
     setSearch(value)
     setSelectedProduct(null)
-    if (value.length >= 1) {
-      setShowResults(true)
-    }
+    // Siempre mostrar resultados cuando se escribe
+    setShowResults(true)
   }
 
   const handleInputFocus = () => {
-    if (search.length >= 1 || products.length > 0) {
-      setShowResults(true)
-    }
+    // Mostrar todos los productos cuando se hace focus
+    setShowResults(true)
   }
 
   return (
@@ -129,9 +136,9 @@ export function ProductSearch({
             </div>
           )}
           
-          {!loading && products.length > 0 && (
-            <div>
-              {products.map((product) => (
+          {!loading && filteredProducts.length > 0 && (
+            <div className="max-h-60 overflow-auto">
+              {filteredProducts.map((product) => (
                 <button
                   key={product.id}
                   type="button"
@@ -144,7 +151,7 @@ export function ProductSearch({
             </div>
           )}
           
-          {!loading && products.length === 0 && search.length >= 1 && (
+          {!loading && filteredProducts.length === 0 && search.length >= 1 && (
             <div className="p-2">
               <Button
                 type="button"
@@ -155,6 +162,12 @@ export function ProductSearch({
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Crear nuevo: &quot;{search}&quot;
               </Button>
+            </div>
+          )}
+
+          {!loading && filteredProducts.length === 0 && search.length === 0 && (
+            <div className="p-4 text-sm text-muted-foreground text-center">
+              No hay productos disponibles
             </div>
           )}
         </div>
