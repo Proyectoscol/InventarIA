@@ -100,12 +100,32 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
 
   const total = (quantity || 0) * (unitPrice || 0)
 
-  // Actualizar creditAmount cuando es crédito puro
+  // Actualizar creditAmount cuando es crédito puro y asegurar que creditDays esté definido
   useEffect(() => {
     if (paymentType === "credit" && total > 0) {
-      setValue("creditAmount", total)
+      setValue("creditAmount", total, { shouldValidate: true })
+      // Asegurar que creditDays esté definido
+      const currentDays = watch("creditDays")
+      if (!currentDays || currentDays <= 0) {
+        setValue("creditDays", 15, { shouldValidate: true })
+        setCreditDaysType("preset")
+      }
+    } else if (paymentType === "mixed" && total > 0) {
+      // Asegurar que creditDays esté definido para mixto
+      const currentDays = watch("creditDays")
+      if (!currentDays || currentDays <= 0) {
+        setValue("creditDays", 15, { shouldValidate: true })
+        setCreditDaysType("preset")
+      }
+      // Asegurar que cashAmount y creditAmount estén definidos
+      const currentCash = watch("cashAmount")
+      const currentCredit = watch("creditAmount")
+      if ((!currentCash || currentCash === 0) && (!currentCredit || currentCredit === 0)) {
+        setValue("cashAmount", total / 2, { shouldValidate: true })
+        setValue("creditAmount", total / 2, { shouldValidate: true })
+      }
     }
-  }, [paymentType, total, setValue])
+  }, [paymentType, total, setValue, watch])
 
   // Obtener último precio de venta cuando se selecciona un producto
   useEffect(() => {
@@ -152,6 +172,24 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
   const onSubmit = async (data: SaleFormData) => {
     setLoading(true)
     try {
+      // Calcular total
+      const calculatedTotal = data.unitPrice * data.quantity
+      
+      // Preparar datos según el tipo de pago
+      let finalCashAmount: number | undefined = undefined
+      let finalCreditAmount: number | undefined = undefined
+      
+      if (data.paymentType === "cash") {
+        finalCashAmount = calculatedTotal
+        finalCreditAmount = undefined
+      } else if (data.paymentType === "credit") {
+        finalCashAmount = undefined
+        finalCreditAmount = calculatedTotal
+      } else if (data.paymentType === "mixed") {
+        finalCashAmount = data.cashAmount || 0
+        finalCreditAmount = data.creditAmount || 0
+      }
+      
       const res = await fetch("/api/movements/sale", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -159,9 +197,9 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
           ...data,
           companyId,
           customerId: data.customerId && data.customerId.trim() !== "" ? data.customerId : null,
-          // Asegurar que cashAmount y creditAmount estén correctamente definidos
-          cashAmount: paymentType === "cash" ? total : (paymentType === "mixed" ? data.cashAmount : undefined),
-          creditAmount: paymentType === "credit" ? total : (paymentType === "mixed" ? data.creditAmount : undefined)
+          cashAmount: finalCashAmount,
+          creditAmount: finalCreditAmount,
+          creditDays: data.paymentType === "credit" || data.paymentType === "mixed" ? data.creditDays : undefined
         })
       })
 
@@ -349,14 +387,26 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
             } else if (val === "credit") {
               setValue("cashAmount", undefined)
               setValue("creditAmount", total)
-              setValue("creditDays", creditDaysType === "preset" ? 15 : parseInt(customCreditDays) || undefined)
+              // Inicializar días de crédito si no están definidos
+              const currentDays = watch("creditDays")
+              if (!currentDays) {
+                setValue("creditDays", 15)
+                setCreditDaysType("preset")
+              }
             } else if (val === "mixed") {
-              // Mantener valores si ya existen
-              if (!watch("cashAmount") && !watch("creditAmount")) {
+              // Mantener valores si ya existen, sino dividir en partes iguales
+              const currentCash = watch("cashAmount")
+              const currentCredit = watch("creditAmount")
+              if (!currentCash && !currentCredit) {
                 setValue("cashAmount", total / 2)
                 setValue("creditAmount", total / 2)
               }
-              setValue("creditDays", creditDaysType === "preset" ? 15 : parseInt(customCreditDays) || undefined)
+              // Inicializar días de crédito si no están definidos
+              const currentDays = watch("creditDays")
+              if (!currentDays) {
+                setValue("creditDays", 15)
+                setCreditDaysType("preset")
+              }
             }
           }}
         >

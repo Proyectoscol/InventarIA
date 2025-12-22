@@ -100,6 +100,9 @@ export async function POST(req: NextRequest) {
         })
       }
       
+      // Calcular totalAmount
+      const totalAmount = data.unitPrice * data.quantity
+      
       // Crear movimiento con fecha en zona horaria de Colombia
       const movement = await tx.movement.create({
         data: {
@@ -110,13 +113,13 @@ export async function POST(req: NextRequest) {
           batchId: batchUpdates[0].batchId,
           quantity: data.quantity,
           unitPrice: data.unitPrice,
-          totalAmount: data.unitPrice * data.quantity,
+          totalAmount: totalAmount,
           unitCost,
           profit,
           paymentType: data.paymentType,
-          cashAmount: data.paymentType === "cash" ? data.totalAmount : (data.paymentType === "mixed" ? data.cashAmount : null),
-          creditAmount: data.paymentType === "credit" ? data.totalAmount : (data.paymentType === "mixed" ? data.creditAmount : null),
-          creditDays: data.paymentType === "credit" || data.paymentType === "mixed" ? data.creditDays : null,
+          cashAmount: data.paymentType === "cash" ? totalAmount : (data.paymentType === "mixed" ? (data.cashAmount || 0) : null),
+          creditAmount: data.paymentType === "credit" ? totalAmount : (data.paymentType === "mixed" ? (data.creditAmount || 0) : null),
+          creditDays: data.paymentType === "credit" || data.paymentType === "mixed" ? (data.creditDays || null) : null,
           creditPaid: data.paymentType === "cash",
           hasShipping: data.hasShipping || false,
           shippingCost: data.shippingCost,
