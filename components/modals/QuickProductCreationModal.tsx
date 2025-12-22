@@ -117,7 +117,7 @@ export function QuickProductCreationModal({
   }
 
   // Paso 2: Registrar compra inicial
-  const onPurchaseSubmit = async (data: PurchaseFormData) => {
+  const onPurchaseSubmit = async (data: Omit<PurchaseFormData, "productId">) => {
     if (!createdProductId) {
       toast.error("Error: No se encontró el producto creado")
       return
