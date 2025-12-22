@@ -24,6 +24,7 @@ const saleSchema = z.object({
   paymentType: z.enum(["cash", "credit", "mixed"]),
   cashAmount: z.number().optional(),
   creditAmount: z.number().optional(),
+  creditDays: z.number().int().min(1).optional(), // Días de crédito (requerido si es crédito o mixto)
   customerId: z.string().optional(),
   hasShipping: z.boolean().default(false),
   shippingCost: z.number().optional(),
@@ -38,6 +39,14 @@ const saleSchema = z.object({
 }, {
   message: "En pago mixto, la suma debe igualar el total",
   path: ["cashAmount"]
+}).refine((data) => {
+  if (data.paymentType === "credit" || data.paymentType === "mixed") {
+    return data.creditDays !== undefined && data.creditDays > 0
+  }
+  return true
+}, {
+  message: "Debes especificar los días de crédito",
+  path: ["creditDays"]
 })
 
 type SaleFormData = z.infer<typeof saleSchema>
