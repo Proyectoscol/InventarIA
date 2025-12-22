@@ -436,9 +436,10 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
       <div>
         <Label>Tipo de Pago</Label>
         <RadioGroup
-          value={paymentType}
+          value={paymentType || "cash"}
           onValueChange={(val) => {
-            setValue("paymentType", val as any)
+            console.log("RadioGroup onValueChange:", val) // Debug
+            setValue("paymentType", val as any, { shouldValidate: true })
             // Resetear valores cuando cambia el tipo de pago
             if (val === "cash") {
               setValue("cashAmount", undefined)
@@ -446,41 +447,42 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
               setValue("creditDays", undefined)
             } else if (val === "credit") {
               setValue("cashAmount", undefined)
-              setValue("creditAmount", total)
+              setValue("creditAmount", total > 0 ? total : 0)
               // Inicializar días de crédito si no están definidos
               const currentDays = watch("creditDays")
               if (!currentDays) {
-                setValue("creditDays", 15)
+                setValue("creditDays", 15, { shouldValidate: true })
                 setCreditDaysType("preset")
               }
             } else if (val === "mixed") {
               // Mantener valores si ya existen, sino dividir en partes iguales
               const currentCash = watch("cashAmount")
               const currentCredit = watch("creditAmount")
-              if (!currentCash && !currentCredit) {
-                setValue("cashAmount", total / 2)
-                setValue("creditAmount", total / 2)
+              if ((!currentCash || currentCash === 0) && (!currentCredit || currentCredit === 0)) {
+                const half = total > 0 ? total / 2 : 0
+                setValue("cashAmount", half, { shouldValidate: true })
+                setValue("creditAmount", half, { shouldValidate: true })
               }
               // Inicializar días de crédito si no están definidos
               const currentDays = watch("creditDays")
               if (!currentDays) {
-                setValue("creditDays", 15)
+                setValue("creditDays", 15, { shouldValidate: true })
                 setCreditDaysType("preset")
               }
             }
           }}
         >
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="cash" id="cash" name="payment-type" />
-            <Label htmlFor="cash">Contado</Label>
+            <RadioGroupItem value="cash" id="payment-cash" name="payment-type" />
+            <Label htmlFor="payment-cash" className="cursor-pointer">Contado</Label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="credit" id="credit" name="payment-type" />
-            <Label htmlFor="credit">Crédito</Label>
+            <RadioGroupItem value="credit" id="payment-credit" name="payment-type" />
+            <Label htmlFor="payment-credit" className="cursor-pointer">Crédito</Label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="mixed" id="mixed" name="payment-type" />
-            <Label htmlFor="mixed">Mixto</Label>
+            <RadioGroupItem value="mixed" id="payment-mixed" name="payment-type" />
+            <Label htmlFor="payment-mixed" className="cursor-pointer">Mixto</Label>
           </div>
         </RadioGroup>
 
