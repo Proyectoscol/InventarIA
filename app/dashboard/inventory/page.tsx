@@ -75,10 +75,9 @@ export default function InventoryPage() {
       const res = await fetch(`/api/companies/${compId}/products?q=${encodeURIComponent(search)}`)
       if (res.ok) {
         const data = await res.json()
-        // Filtrar productos que tengan stock en la bodega seleccionada
-        const filteredProducts = data.filter((product: any) => 
-          product.stock?.some((s: any) => s.warehouseId === warehouseId)
-        )
+        // Mostrar todos los productos de la compañía, no solo los que tienen stock
+        // El stock se mostrará como 0 si no existe registro para esa bodega
+        const filteredProducts = data
         setProducts(filteredProducts)
         
         // Cargar detalles de último pedido para cada producto
@@ -225,7 +224,7 @@ export default function InventoryPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {products.map((product) => {
               const stock = product.stock?.find((s: any) => s.warehouseId === selectedWarehouseId)
-              const stockQuantity = stock?.quantity || 0
+              const stockQuantity = stock?.quantity ?? 0 // Usar ?? para que 0 se muestre correctamente
               const isLowStock = stockQuantity < product.minStockThreshold
               const details = productDetails[product.id] || {}
               

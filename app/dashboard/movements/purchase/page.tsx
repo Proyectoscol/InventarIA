@@ -86,6 +86,7 @@ export default function PurchasePage() {
               warehouses={warehouses}
               preselectedProductId={preselectedProductId}
               preselectedWarehouseId={preselectedWarehouseId}
+              redirectOnQuickCreate={true}
               onSuccess={() => router.push("/dashboard/inventory")}
             />
           </CardContent>

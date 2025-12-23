@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { PlusCircle } from "lucide-react"
+import { PlusCircle, X } from "lucide-react"
 
 interface Product {
   id: string
@@ -137,16 +137,34 @@ export function ProductSearch({
     setShowResults(true)
   }
 
+  const handleClear = () => {
+    setSelectedProduct(null)
+    setSearch("")
+    setShowResults(false)
+  }
+
   return (
     <div className="relative w-full" ref={containerRef}>
-      <Input
-        placeholder={placeholder}
-        value={search}
-        onChange={handleInputChange}
-        onFocus={handleInputFocus}
-        disabled={disabled}
-        className={selectedProduct ? "bg-green-50 border-green-300" : ""}
-      />
+      <div className="relative">
+        <Input
+          placeholder={placeholder}
+          value={search}
+          onChange={handleInputChange}
+          onFocus={handleInputFocus}
+          disabled={disabled}
+          className={selectedProduct ? "bg-green-50 border-green-300 pr-10" : ""}
+        />
+        {selectedProduct && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            title="Limpiar selección"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
       
       {showResults && (
         <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">

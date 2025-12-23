@@ -33,9 +33,10 @@ interface PurchaseFormProps {
   preselectedWarehouseId?: string
   onSuccess?: () => void
   onCancel?: () => void
+  redirectOnQuickCreate?: boolean // Si es true, redirige al dashboard cuando se completa creación rápida
 }
 
-export function PurchaseForm({ companyId, warehouses, preselectedProductId, preselectedWarehouseId, onSuccess, onCancel }: PurchaseFormProps) {
+export function PurchaseForm({ companyId, warehouses, preselectedProductId, preselectedWarehouseId, onSuccess, onCancel, redirectOnQuickCreate = false }: PurchaseFormProps) {
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [showQuickProductCreation, setShowQuickProductCreation] = useState(false)
@@ -266,40 +267,53 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
 
     </form>
 
-    {/* Modal para creación rápida de producto - Fuera del form para evitar conflictos */}
-    {showQuickProductCreation && (
-      <QuickProductCreationModal
-        companyId={companyId}
-        warehouses={warehouses}
-        initialProductName={quickProductName}
-        onSuccess={async (productId) => {
-          setShowQuickProductCreation(false)
-          setQuickProductName("")
-          // Recargar el producto para obtener todos sus datos
-          try {
-            const res = await fetch(`/api/companies/${companyId}/products`)
-            if (res.ok) {
-              const products = await res.json()
-              const newProduct = products.find((p: any) => p.id === productId)
-              if (newProduct) {
-                setSelectedProduct(newProduct)
-                setValue("productId", newProduct.id)
-                toast.success("✅ Producto listo para comprar", {
-                  description: `"${newProduct.name}" está disponible en inventario`,
-                  duration: 3000
-                })
-              }
+      {/* Modal para creación rápida de producto - Fuera del form para evitar conflictos */}
+      {showQuickProductCreation && (
+        <QuickProductCreationModal
+          companyId={companyId}
+          warehouses={warehouses}
+          initialProductName={quickProductName}
+          onSuccess={async (productId) => {
+            setShowQuickProductCreation(false)
+            setQuickProductName("")
+            
+            // Si redirectOnQuickCreate es true, redirigir al dashboard porque ya se registró la compra
+            if (redirectOnQuickCreate) {
+              toast.success("✅ Producto creado y compra registrada", {
+                description: "Redirigiendo al dashboard...",
+                duration: 2000
+              })
+              setTimeout(() => {
+                window.location.href = "/dashboard"
+              }, 1000)
+              return
             }
-          } catch (error) {
-            console.error("Error cargando producto:", error)
-          }
-        }}
-        onCancel={() => {
-          setShowQuickProductCreation(false)
-          setQuickProductName("")
-        }}
-      />
-    )}
+            
+            // Si no, recargar el producto para seleccionarlo
+            try {
+              const res = await fetch(`/api/companies/${companyId}/products`)
+              if (res.ok) {
+                const products = await res.json()
+                const newProduct = products.find((p: any) => p.id === productId)
+                if (newProduct) {
+                  setSelectedProduct(newProduct)
+                  setValue("productId", newProduct.id)
+                  toast.success("✅ Producto listo para comprar", {
+                    description: `"${newProduct.name}" está disponible en inventario`,
+                    duration: 3000
+                  })
+                }
+              }
+            } catch (error) {
+              console.error("Error cargando producto:", error)
+            }
+          }}
+          onCancel={() => {
+            setShowQuickProductCreation(false)
+            setQuickProductName("")
+          }}
+        />
+      )}
     </>
   )
 }

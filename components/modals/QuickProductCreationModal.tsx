@@ -83,6 +83,12 @@ export function QuickProductCreationModal({
 
   // Paso 1: Crear producto
   const onProductSubmit = async (data: ProductFormData) => {
+    // Validar que el nombre esté lleno
+    if (!data.name || data.name.trim().length === 0) {
+      toast.error("❌ El nombre del producto es requerido")
+      return
+    }
+
     setLoading(true)
     try {
       const res = await fetch("/api/products", {
@@ -120,6 +126,20 @@ export function QuickProductCreationModal({
   const onPurchaseSubmit = async (data: Omit<PurchaseFormData, "productId">) => {
     if (!createdProductId) {
       toast.error("Error: No se encontró el producto creado")
+      return
+    }
+
+    // Validar campos requeridos
+    if (!data.warehouseId) {
+      toast.error("❌ Debes seleccionar una bodega")
+      return
+    }
+    if (!data.quantity || data.quantity <= 0) {
+      toast.error("❌ La cantidad debe ser mayor a 0")
+      return
+    }
+    if (!price || price <= 0) {
+      toast.error("❌ El precio debe ser mayor a 0")
       return
     }
 
