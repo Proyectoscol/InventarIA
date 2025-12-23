@@ -172,20 +172,29 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
       </div>
 
       <div>
-        <Label>Tipo de Precio</Label>
-        <RadioGroup
-          value={priceType}
-          onValueChange={(val) => setValue("priceType", val as any)}
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="unit" id="unit" name="purchase-price-type" />
-            <Label htmlFor="unit">Precio Unitario</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="total" id="total" name="purchase-price-type" />
-            <Label htmlFor="total">Precio Total</Label>
-          </div>
-        </RadioGroup>
+        <Label className="mb-2 block">Tipo de Precio</Label>
+        <div className="grid grid-cols-2 gap-3">
+          <Button
+            type="button"
+            variant={priceType === "unit" ? "default" : "outline"}
+            className={`h-12 text-base font-medium ${
+              priceType === "unit" ? "bg-primary text-white" : ""
+            }`}
+            onClick={() => setValue("priceType", "unit", { shouldValidate: true })}
+          >
+            Precio Unitario
+          </Button>
+          <Button
+            type="button"
+            variant={priceType === "total" ? "default" : "outline"}
+            className={`h-12 text-base font-medium ${
+              priceType === "total" ? "bg-primary text-white" : ""
+            }`}
+            onClick={() => setValue("priceType", "total", { shouldValidate: true })}
+          >
+            Precio Total
+          </Button>
+        </div>
       </div>
 
       <div>

@@ -118,8 +118,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
             setStockInfo(null)
           }
         })
-        .catch(err => {
-          console.error("Error obteniendo stock:", err)
+        .catch(() => {
           setStockInfo(null)
         })
     } else {
@@ -129,8 +128,6 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
 
   // Escuchar cambios en paymentType y asegurar que los campos se inicialicen correctamente
   useEffect(() => {
-    console.log("🔍 useEffect paymentType cambió a:", paymentType, "total:", total)
-    
     if (paymentType === "credit") {
       // Inicializar valores para crédito
       if (total > 0) {
@@ -189,8 +186,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
             setLastSalePrice(null)
           }
         })
-        .catch(err => {
-          console.error("Error obteniendo último precio:", err)
+        .catch(() => {
           setLastSalePrice(null)
         })
     } else {
@@ -221,15 +217,6 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
       // Calcular total
       const calculatedTotal = data.unitPrice * data.quantity
       
-      // LOGS DE DEBUG
-      console.log("=== FORMULARIO ENVIADO ===")
-      console.log("paymentType del form:", data.paymentType)
-      console.log("paymentType tipo:", typeof data.paymentType)
-      console.log("cashAmount del form:", data.cashAmount)
-      console.log("creditAmount del form:", data.creditAmount)
-      console.log("creditDays del form:", data.creditDays)
-      console.log("total calculado:", calculatedTotal)
-      
       // Preparar datos según el tipo de pago
       let finalCashAmount: number | undefined = undefined
       let finalCreditAmount: number | undefined = undefined
@@ -253,8 +240,6 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         creditAmount: finalCreditAmount,
         creditDays: data.paymentType === "credit" || data.paymentType === "mixed" ? data.creditDays : undefined
       }
-      
-      console.log("Payload final:", JSON.stringify(payload, null, 2))
       
       const res = await fetch("/api/movements/sale", {
         method: "POST",
@@ -375,36 +360,28 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
 
       {/* Precio de Venta */}
       <div>
-        <div className="flex justify-between items-center mb-2">
-          <Label>Precio de Venta (COP)</Label>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center space-x-2">
-              <input
-                type="radio"
-                id="price-unit"
-                name="price-input-type"
-                checked={priceInputType === "unit"}
-                onChange={() => setPriceInputType("unit")}
-                className="h-4 w-4"
-              />
-              <Label htmlFor="price-unit" className="text-sm font-normal cursor-pointer">
-                Unitario
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="radio"
-                id="price-total"
-                name="price-input-type"
-                checked={priceInputType === "total"}
-                onChange={() => setPriceInputType("total")}
-                className="h-4 w-4"
-              />
-              <Label htmlFor="price-total" className="text-sm font-normal cursor-pointer">
-                Total
-              </Label>
-            </div>
-          </div>
+        <Label className="mb-2 block">Precio de Venta (COP)</Label>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <Button
+            type="button"
+            variant={priceInputType === "unit" ? "default" : "outline"}
+            className={`h-12 text-base font-medium ${
+              priceInputType === "unit" ? "bg-primary text-white" : ""
+            }`}
+            onClick={() => setPriceInputType("unit")}
+          >
+            Precio Unitario
+          </Button>
+          <Button
+            type="button"
+            variant={priceInputType === "total" ? "default" : "outline"}
+            className={`h-12 text-base font-medium ${
+              priceInputType === "total" ? "bg-primary text-white" : ""
+            }`}
+            onClick={() => setPriceInputType("total")}
+          >
+            Precio Total
+          </Button>
         </div>
         
         {lastSalePrice && (
@@ -467,114 +444,84 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
 
       {/* Tipo de Pago */}
       <div>
-        <Label>Tipo de Pago</Label>
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <input
-              type="radio"
-              id="payment-cash"
-              name="payment-type"
-              value="cash"
-              checked={paymentType === "cash"}
-              onChange={(e) => {
-                console.log("✅ Radio clicked: cash")
-                setValue("paymentType", "cash", { shouldValidate: true, shouldDirty: true })
-                // Forzar re-render inmediato
-                setForceUpdate(prev => prev + 1)
-                // Limpiar valores en el siguiente tick para asegurar que se apliquen
-                setTimeout(() => {
-                  setValue("cashAmount", undefined)
-                  setValue("creditAmount", undefined)
-                  setValue("creditDays", undefined)
-                }, 0)
-              }}
-              className="h-4 w-4"
-            />
-            <Label htmlFor="payment-cash" className="cursor-pointer">Contado</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <input
-              type="radio"
-              id="payment-credit"
-              name="payment-type"
-              value="credit"
-              checked={paymentType === "credit"}
-              onChange={(e) => {
-                console.log("✅ Radio clicked: credit, total:", total)
-                setValue("paymentType", "credit", { shouldValidate: true, shouldDirty: true })
-                // Forzar re-render inmediato
-                setForceUpdate(prev => prev + 1)
-                // Inicializar valores en el siguiente tick
-                setTimeout(() => {
-                  setValue("cashAmount", undefined)
+        <Label className="mb-2 block">Tipo de Pago</Label>
+        <div className="grid grid-cols-3 gap-3">
+          <Button
+            type="button"
+            variant={paymentType === "cash" ? "default" : "outline"}
+            className={`h-12 text-base font-medium ${
+              paymentType === "cash" ? "bg-primary text-white" : ""
+            }`}
+            onClick={() => {
+              setValue("paymentType", "cash", { shouldValidate: true, shouldDirty: true })
+              setForceUpdate(prev => prev + 1)
+              setTimeout(() => {
+                setValue("cashAmount", undefined)
+                setValue("creditAmount", undefined)
+                setValue("creditDays", undefined)
+              }, 0)
+            }}
+          >
+            Contado
+          </Button>
+          <Button
+            type="button"
+            variant={paymentType === "credit" ? "default" : "outline"}
+            className={`h-12 text-base font-medium ${
+              paymentType === "credit" ? "bg-primary text-white" : ""
+            }`}
+            onClick={() => {
+              setValue("paymentType", "credit", { shouldValidate: true, shouldDirty: true })
+              setForceUpdate(prev => prev + 1)
+              setTimeout(() => {
+                setValue("cashAmount", undefined)
+                if (total > 0) {
+                  setValue("creditAmount", total, { shouldValidate: true })
+                } else {
+                  setValue("creditAmount", 0, { shouldValidate: true })
+                }
+                const currentDays = watch("creditDays")
+                if (!currentDays || currentDays <= 0) {
+                  setValue("creditDays", 15, { shouldValidate: true })
+                  setCreditDaysType("preset")
+                }
+              }, 0)
+            }}
+          >
+            Crédito
+          </Button>
+          <Button
+            type="button"
+            variant={paymentType === "mixed" ? "default" : "outline"}
+            className={`h-12 text-base font-medium ${
+              paymentType === "mixed" ? "bg-primary text-white" : ""
+            }`}
+            onClick={() => {
+              setValue("paymentType", "mixed", { shouldValidate: true, shouldDirty: true })
+              setForceUpdate(prev => prev + 1)
+              setTimeout(() => {
+                const currentCash = watch("cashAmount")
+                const currentCredit = watch("creditAmount")
+                if ((!currentCash || currentCash === 0) && (!currentCredit || currentCredit === 0)) {
                   if (total > 0) {
-                    setValue("creditAmount", total, { shouldValidate: true })
+                    const half = total / 2
+                    setValue("cashAmount", half, { shouldValidate: true })
+                    setValue("creditAmount", half, { shouldValidate: true })
                   } else {
+                    setValue("cashAmount", 0, { shouldValidate: true })
                     setValue("creditAmount", 0, { shouldValidate: true })
                   }
-                  const currentDays = watch("creditDays")
-                  if (!currentDays || currentDays <= 0) {
-                    setValue("creditDays", 15, { shouldValidate: true })
-                    setCreditDaysType("preset")
-                  }
-                }, 0)
-              }}
-              className="h-4 w-4"
-            />
-            <Label htmlFor="payment-credit" className="cursor-pointer">Crédito</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <input
-              type="radio"
-              id="payment-mixed"
-              name="payment-type"
-              value="mixed"
-              checked={paymentType === "mixed"}
-              onChange={(e) => {
-                console.log("✅ Radio clicked: mixed, total:", total)
-                setValue("paymentType", "mixed", { shouldValidate: true, shouldDirty: true })
-                // Forzar re-render inmediato
-                setForceUpdate(prev => prev + 1)
-                // Inicializar valores en el siguiente tick
-                setTimeout(() => {
-                  const currentCash = watch("cashAmount")
-                  const currentCredit = watch("creditAmount")
-                  if ((!currentCash || currentCash === 0) && (!currentCredit || currentCredit === 0)) {
-                    if (total > 0) {
-                      const half = total / 2
-                      setValue("cashAmount", half, { shouldValidate: true })
-                      setValue("creditAmount", half, { shouldValidate: true })
-                    } else {
-                      setValue("cashAmount", 0, { shouldValidate: true })
-                      setValue("creditAmount", 0, { shouldValidate: true })
-                    }
-                  }
-                  const currentDays = watch("creditDays")
-                  if (!currentDays || currentDays <= 0) {
-                    setValue("creditDays", 15, { shouldValidate: true })
-                    setCreditDaysType("preset")
-                  }
-                }, 0)
-              }}
-              className="h-4 w-4"
-            />
-            <Label htmlFor="payment-mixed" className="cursor-pointer">Mixto</Label>
-          </div>
-        </div>
-
-        {/* Debug - siempre visible para troubleshooting */}
-        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-          <strong>Debug:</strong> paymentType = <span className="font-mono font-bold">{String(paymentType || "undefined")}</span>
-          {paymentType && (
-            <span className="ml-2">
-              (tipo: {typeof paymentType}, forceUpdate: {forceUpdate})
-            </span>
-          )}
-          <div className="mt-1 text-xs">
-            creditDays: {watch("creditDays") || "undefined"} | 
-            cashAmount: {watch("cashAmount") || "undefined"} | 
-            creditAmount: {watch("creditAmount") || "undefined"}
-          </div>
+                }
+                const currentDays = watch("creditDays")
+                if (!currentDays || currentDays <= 0) {
+                  setValue("creditDays", 15, { shouldValidate: true })
+                  setCreditDaysType("preset")
+                }
+              }, 0)
+            }}
+          >
+            Mixto
+          </Button>
         </div>
 
         {/* Campos para crédito - siempre mostrar si es credit o mixed */}
@@ -829,7 +776,6 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
               }
             }
           } catch (error) {
-            console.error("Error cargando producto:", error)
           }
         }}
         onCancel={() => {
