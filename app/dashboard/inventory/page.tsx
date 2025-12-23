@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
 import { ProductForm } from "@/components/forms/ProductForm"
 import { BackButton } from "@/components/shared/BackButton"
+import { EditProductModal } from "@/components/modals/EditProductModal"
+import { EditThresholdModal } from "@/components/modals/EditThresholdModal"
 import { Edit, Package, Calendar, DollarSign, ShoppingCart } from "lucide-react"
 import { toast } from "sonner"
 
@@ -24,6 +26,8 @@ export default function InventoryPage() {
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>("")
   const [showAddProduct, setShowAddProduct] = useState(false)
   const [productDetails, setProductDetails] = useState<Record<string, any>>({})
+  const [editingProduct, setEditingProduct] = useState<any>(null)
+  const [editingThreshold, setEditingThreshold] = useState<any>(null)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -103,13 +107,11 @@ export default function InventoryPage() {
   }
 
   const handleEditProduct = (product: any) => {
-    // TODO: Implementar modal o página de edición
-    toast.info("Funcionalidad de edición próximamente")
+    setEditingProduct(product)
   }
 
   const handleEditThreshold = (product: any) => {
-    // TODO: Implementar modal para editar umbral mínimo
-    toast.info("Funcionalidad de edición de umbral próximamente")
+    setEditingThreshold(product)
   }
 
   const handleAddStock = (product: any) => {
@@ -220,7 +222,7 @@ export default function InventoryPage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {products.map((product) => {
               const stock = product.stock?.find((s: any) => s.warehouseId === selectedWarehouseId)
               const stockQuantity = stock?.quantity || 0
@@ -345,6 +347,36 @@ export default function InventoryPage() {
             </Card>
           )}
         </>
+      )}
+
+      {/* Modales de edición */}
+      {editingProduct && (
+        <EditProductModal
+          product={editingProduct}
+          companyId={companyId}
+          open={!!editingProduct}
+          onClose={() => setEditingProduct(null)}
+          onSuccess={() => {
+            if (companyId && selectedWarehouseId) {
+              fetchProducts(companyId, selectedWarehouseId)
+            }
+          }}
+        />
+      )}
+
+      {editingThreshold && (
+        <EditThresholdModal
+          productId={editingThreshold.id}
+          productName={editingThreshold.name}
+          currentThreshold={editingThreshold.minStockThreshold}
+          open={!!editingThreshold}
+          onClose={() => setEditingThreshold(null)}
+          onSuccess={() => {
+            if (companyId && selectedWarehouseId) {
+              fetchProducts(companyId, selectedWarehouseId)
+            }
+          }}
+        />
       )}
     </div>
   )
