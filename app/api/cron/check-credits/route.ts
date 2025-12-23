@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { sendCreditDueAlert } from "@/lib/email"
 import { getColombiaNow } from "@/lib/date-utils"
+import { getCompanyUserEmails } from "@/lib/company-users"
 
 // Este endpoint puede ser llamado por un cron job externo o por un servicio de scheduling
 // Para Easypanel, puedes configurar un cron job que llame a este endpoint periódicamente
@@ -29,7 +30,17 @@ export async function GET(req: NextRequest) {
     const results = []
 
     for (const company of companies) {
-      if (!company.alertConfig || company.alertConfig.alertEmails.length === 0) {
+      // Obtener emails de usuarios de la compañía
+      const userEmails = await getCompanyUserEmails(company.id)
+      
+      if (userEmails.length === 0) {
+        console.log(`⚠️  No hay usuarios con email para la compañía ${company.name}`)
+        continue
+      }
+      
+      // Verificar si las alertas están habilitadas (opcional, para compatibilidad)
+      if (company.alertConfig && !company.alertConfig.enableAlerts) {
+        console.log(`ℹ️  Alertas deshabilitadas para la compañía ${company.name}`)
         continue
       }
 
@@ -79,7 +90,7 @@ export async function GET(req: NextRequest) {
 
         try {
           await sendCreditDueAlert({
-            to: company.alertConfig.alertEmails,
+            to: userEmails,
             movements: movementsForEmail
           })
 

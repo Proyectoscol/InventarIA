@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { sendCreditDueAlert } from "@/lib/email"
 import { getColombiaNow } from "@/lib/date-utils"
+import { getCompanyUserEmails } from "@/lib/company-users"
 
 export async function POST(req: NextRequest) {
   try {
@@ -54,14 +55,25 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Obtener configuración de alertas
+    // Obtener emails de usuarios de la compañía
+    const userEmails = await getCompanyUserEmails(companyId)
+    
+    if (userEmails.length === 0) {
+      return NextResponse.json({
+        message: "No hay usuarios con email asociados a la compañía",
+        credits: dueCredits.length,
+        notified: false
+      })
+    }
+    
+    // Verificar si las alertas están habilitadas (opcional, para compatibilidad)
     const alertConfig = await prisma.alertConfig.findUnique({
       where: { companyId }
     })
-
-    if (!alertConfig || !alertConfig.enableAlerts || alertConfig.alertEmails.length === 0) {
+    
+    if (alertConfig && !alertConfig.enableAlerts) {
       return NextResponse.json({
-        message: "Alertas deshabilitadas o sin emails configurados",
+        message: "Alertas deshabilitadas para esta compañía",
         credits: dueCredits.length,
         notified: false
       })
@@ -82,10 +94,10 @@ export async function POST(req: NextRequest) {
       }
     })
 
-    // Enviar alerta
+    // Enviar alerta a los usuarios de la compañía
     try {
       await sendCreditDueAlert({
-        to: alertConfig.alertEmails,
+        to: userEmails,
         movements: movementsForEmail
       })
 

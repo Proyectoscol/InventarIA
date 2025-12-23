@@ -279,11 +279,22 @@ async function checkAndSendStockAlert({
     return
   }
   
+  // Obtener emails de usuarios de la compañía
+  const { getCompanyUserEmails } = await import("@/lib/company-users")
+  const userEmails = await getCompanyUserEmails(companyId)
+  
+  if (userEmails.length === 0) {
+    console.warn(`⚠️  No hay usuarios con email asociados a la compañía ${companyId}`)
+    return
+  }
+  
+  // Verificar si las alertas están habilitadas (opcional, para compatibilidad)
   const alertConfig = await prisma.alertConfig.findUnique({
     where: { companyId }
   })
   
-  if (!alertConfig || !alertConfig.enableAlerts || alertConfig.alertEmails.length === 0) {
+  if (alertConfig && !alertConfig.enableAlerts) {
+    console.log(`ℹ️  Alertas deshabilitadas para la compañía ${companyId}`)
     return
   }
   
@@ -297,7 +308,7 @@ async function checkAndSendStockAlert({
   })
   
   await sendStockAlert({
-    to: alertConfig.alertEmails,
+    to: userEmails,
     productName: product.name,
     warehouseName: warehouse?.name || "Desconocida",
     currentStock,
