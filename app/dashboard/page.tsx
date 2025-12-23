@@ -13,7 +13,8 @@ import {
   Building2,
   Warehouse,
   ArrowRight,
-  CheckCircle
+  CheckCircle,
+  Users
 } from "lucide-react"
 
 export default function DashboardPage() {
@@ -212,8 +213,8 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Inventario y Reportes */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Inventario, Clientes y Reportes */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Link href="/dashboard/inventory">
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                   <CardHeader>
@@ -225,6 +226,24 @@ export default function DashboardPage() {
                         <CardTitle>Inventario</CardTitle>
                         <CardDescription>
                           Gestiona tus productos y stock
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
+              </Link>
+
+              <Link href="/dashboard/settings/customers">
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                  <CardHeader>
+                    <div className="flex items-center space-x-3">
+                      <div className="p-3 bg-blue-100 rounded-lg">
+                        <Users className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <CardTitle>Clientes</CardTitle>
+                        <CardDescription>
+                          Gestiona tu base de clientes
                         </CardDescription>
                       </div>
                     </div>

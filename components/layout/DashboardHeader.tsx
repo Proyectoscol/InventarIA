@@ -28,6 +28,7 @@ export function DashboardHeader() {
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
     { name: "Inventario", href: "/dashboard/inventory", icon: Package },
+    { name: "Clientes", href: "/dashboard/settings/customers", icon: User },
     { name: "Nueva Venta", href: "/dashboard/movements/sale", icon: ShoppingCart },
     { name: "Nueva Compra", href: "/dashboard/movements/purchase", icon: ShoppingCart },
     { name: "Estadísticas", href: "/dashboard/stats", icon: TrendingUp },
