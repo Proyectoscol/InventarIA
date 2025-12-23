@@ -27,9 +27,6 @@ type PurchaseFormData = {
   quantity: number
   price: number
   priceType: "unit" | "total"
-  paymentType: "cash" | "credit" | "mixed"
-  cashAmount?: number
-  creditAmount?: number
   notes?: string
 }
 
@@ -70,8 +67,7 @@ export function QuickProductCreationModal({
   const purchaseForm = useForm<Omit<PurchaseFormData, "productId">>({
     resolver: zodResolver(purchaseFormSchema),
     defaultValues: {
-      priceType: "unit",
-      paymentType: "cash"
+      priceType: "unit"
     }
   })
 
@@ -156,9 +152,7 @@ export function QuickProductCreationModal({
           quantity: data.quantity,
           price: unitCost,
           priceType: "unit", // Siempre enviar como unitario al backend
-          paymentType: data.paymentType,
-          cashAmount: data.cashAmount,
-          creditAmount: data.creditAmount,
+          paymentType: "cash", // Las compras siempre son de contado
           notes: data.notes,
           companyId
         })
@@ -308,7 +302,7 @@ export function QuickProductCreationModal({
             >
               <div>
                 <Label className="text-base">Bodega *</Label>
-                <Select {...purchaseForm.register("warehouseId")}>
+                <Select {...purchaseForm.register("warehouseId")} required>
                   <option value="">Seleccionar...</option>
                   {warehouses.map((w) => (
                     <option key={w.id} value={w.id}>{w.name}</option>
@@ -323,8 +317,10 @@ export function QuickProductCreationModal({
                 <Label className="text-base">Cantidad *</Label>
                 <Input
                   type="number"
+                  min="1"
                   {...purchaseForm.register("quantity", { valueAsNumber: true })}
                   placeholder="0"
+                  required
                 />
                 {purchaseForm.formState.errors.quantity && (
                   <p className="text-base text-red-500">{purchaseForm.formState.errors.quantity.message}</p>
@@ -350,11 +346,11 @@ export function QuickProductCreationModal({
 
               <div>
                 <Label className="text-base">
-                  {priceType === "unit" ? "Precio Unitario (COP)" : "Precio Total (COP)"}
+                  {priceType === "unit" ? "Precio Unitario (COP) *" : "Precio Total (COP) *"}
                 </Label>
                 <CurrencyInput
                   value={price || 0}
-                  onChange={(val) => purchaseForm.setValue("price", val)}
+                  onChange={(val) => purchaseForm.setValue("price", val, { shouldValidate: true })}
                 />
                 {priceType === "total" && quantity && (
                   <p className="text-base text-muted-foreground mt-1">
@@ -366,47 +362,6 @@ export function QuickProductCreationModal({
                 )}
               </div>
 
-              <div>
-                <Label className="text-base">Tipo de Pago</Label>
-                <RadioGroup
-                  value={purchaseForm.watch("paymentType")}
-                  onValueChange={(val) => purchaseForm.setValue("paymentType", val as any)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="cash" id="purchase-cash" name="purchase-payment-type" />
-                    <Label htmlFor="purchase-cash" className="text-base font-normal cursor-pointer">Contado</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="credit" id="purchase-credit" name="purchase-payment-type" />
-                    <Label htmlFor="purchase-credit" className="text-base font-normal cursor-pointer">Crédito</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="mixed" id="purchase-mixed" name="purchase-payment-type" />
-                    <Label htmlFor="purchase-mixed" className="text-base font-normal cursor-pointer">Mixto</Label>
-                  </div>
-                </RadioGroup>
-
-                {purchaseForm.watch("paymentType") === "mixed" && (
-                  <div className="mt-4 space-y-3 pl-6">
-                    <div>
-                      <Label className="text-base">Contado (COP)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        {...purchaseForm.register("cashAmount", { valueAsNumber: true })}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-base">Crédito (COP)</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        {...purchaseForm.register("creditAmount", { valueAsNumber: true })}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
 
               <div>
                 <Label className="text-base">Notas (Opcional)</Label>

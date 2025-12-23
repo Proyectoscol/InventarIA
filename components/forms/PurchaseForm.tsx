@@ -20,9 +20,6 @@ type PurchaseFormData = {
   quantity: number
   price: number
   priceType: "unit" | "total"
-  paymentType: "cash" | "credit" | "mixed"
-  cashAmount?: number
-  creditAmount?: number
   notes?: string
 }
 
@@ -52,7 +49,6 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
     resolver: zodResolver(purchaseSchema),
     defaultValues: {
       priceType: "unit",
-      paymentType: "cash",
       warehouseId: preselectedWarehouseId || "",
       productId: preselectedProductId || ""
     }
@@ -66,7 +62,6 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
   }, [preselectedWarehouseId, setValue])
 
   const priceType = watch("priceType")
-  const paymentType = watch("paymentType")
   const quantity = watch("quantity")
   const price = watch("price")
 
@@ -79,12 +74,23 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
   const onSubmit = async (data: PurchaseFormData) => {
     setLoading(true)
     try {
+      // Calcular precio unitario
+      const unitPrice = data.priceType === "unit" 
+        ? data.price 
+        : data.price && data.quantity ? data.price / data.quantity : 0
+
       const res = await fetch("/api/movements/purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...data,
-          companyId
+          warehouseId: data.warehouseId,
+          productId: data.productId,
+          quantity: data.quantity,
+          price: unitPrice,
+          priceType: "unit", // Siempre enviar como unitario al backend
+          paymentType: "cash", // Las compras siempre son de contado
+          companyId,
+          notes: data.notes
         })
       })
 
@@ -115,8 +121,8 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
     <>
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div>
-        <Label>Bodega</Label>
-        <Select {...register("warehouseId")}>
+        <Label>Bodega *</Label>
+        <Select {...register("warehouseId")} required>
           <option value="">Seleccionar...</option>
           {warehouses.map((w) => (
             <option key={w.id} value={w.id}>{w.name}</option>
@@ -128,13 +134,13 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
       </div>
 
       <div>
-        <Label>Producto</Label>
+        <Label>Producto *</Label>
         <ProductSearch
           companyId={companyId}
           preselectedProductId={preselectedProductId}
           onSelect={(product) => {
             setSelectedProduct(product)
-            setValue("productId", product.id)
+            setValue("productId", product.id, { shouldValidate: true })
           }}
           onCreateNew={(name) => {
             setQuickProductName(name)
@@ -152,11 +158,13 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
       </div>
 
       <div>
-        <Label>Cantidad</Label>
+        <Label>Cantidad *</Label>
         <Input
           type="number"
+          min="1"
           {...register("quantity", { valueAsNumber: true })}
           placeholder="0"
+          required
         />
         {errors.quantity && (
           <p className="text-sm text-red-500">{errors.quantity.message}</p>
@@ -182,11 +190,11 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
 
       <div>
         <Label>
-          {priceType === "unit" ? "Precio Unitario (COP)" : "Precio Total (COP)"}
+          {priceType === "unit" ? "Precio Unitario (COP) *" : "Precio Total (COP) *"}
         </Label>
         <CurrencyInput
           value={price || 0}
-          onChange={(val) => setValue("price", val)}
+          onChange={(val) => setValue("price", val, { shouldValidate: true })}
         />
         {priceType === "total" && quantity && (
           <p className="text-sm text-muted-foreground mt-1">
@@ -195,46 +203,6 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
         )}
         {errors.price && (
           <p className="text-sm text-red-500">{errors.price.message}</p>
-        )}
-      </div>
-
-      <div>
-        <Label>Tipo de Pago</Label>
-        <RadioGroup
-          value={paymentType}
-          onValueChange={(val) => setValue("paymentType", val as any)}
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="cash" id="cash" name="purchase-payment-type" />
-            <Label htmlFor="cash">Contado</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="credit" id="credit" name="purchase-payment-type" />
-            <Label htmlFor="credit">Crédito</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="mixed" id="mixed" name="purchase-payment-type" />
-            <Label htmlFor="mixed">Mixto</Label>
-          </div>
-        </RadioGroup>
-
-        {paymentType === "mixed" && (
-          <div className="mt-4 space-y-3 pl-6">
-            <div>
-              <Label>Contado (COP)</Label>
-              <CurrencyInput
-                value={watch("cashAmount") || 0}
-                onChange={(val) => setValue("cashAmount", val)}
-              />
-            </div>
-            <div>
-              <Label>Crédito (COP)</Label>
-              <CurrencyInput
-                value={watch("creditAmount") || 0}
-                onChange={(val) => setValue("creditAmount", val)}
-              />
-            </div>
-          </div>
         )}
       </div>
 

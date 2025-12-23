@@ -33,11 +33,8 @@ export const purchaseSchema = z.object({
   warehouseId: z.string().min(1, "Selecciona una bodega"),
   productId: z.string().min(1, "Selecciona un producto"),
   quantity: z.number().int().min(1, "La cantidad debe ser al menos 1"),
-  price: z.number().min(0, "El precio debe ser positivo"),
+  price: z.number().min(0.01, "El precio unitario es obligatorio y debe ser mayor a 0"),
   priceType: z.enum(["unit", "total"]),
-  paymentType: z.enum(["cash", "credit", "mixed"]),
-  cashAmount: z.number().optional(),
-  creditAmount: z.number().optional(),
   notes: z.string().optional()
 })
 
