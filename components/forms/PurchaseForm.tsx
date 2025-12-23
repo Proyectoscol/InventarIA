@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { CurrencyInput } from "@/components/shared/CurrencyInput"
 import { ProductSearch } from "./ProductSearch"
+import { QuickProductCreationModal } from "@/components/modals/QuickProductCreationModal"
 import { Select } from "@/components/ui/select"
 import { toast } from "sonner"
 
@@ -37,6 +38,8 @@ interface PurchaseFormProps {
 export function PurchaseForm({ companyId, warehouses, preselectedProductId, preselectedWarehouseId, onSuccess, onCancel }: PurchaseFormProps) {
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [showQuickProductCreation, setShowQuickProductCreation] = useState(false)
+  const [quickProductName, setQuickProductName] = useState("")
 
   const {
     register,
@@ -108,6 +111,7 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div>
         <Label>Bodega</Label>
@@ -131,38 +135,9 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
             setSelectedProduct(product)
             setValue("productId", product.id)
           }}
-          onCreateNew={async (name) => {
-            try {
-              const res = await fetch("/api/products", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  name: name.trim(),
-                  companyId,
-                  minStockThreshold: 10
-                })
-              })
-
-              if (!res.ok) {
-                const error = await res.json()
-                throw new Error(error.error || "Error al crear producto")
-              }
-
-              const newProduct = await res.json()
-              toast.success("✅ Producto creado exitosamente", {
-                description: `El producto "${newProduct.name}" se ha agregado y seleccionado`,
-                duration: 3000
-              })
-              
-              // Seleccionar el nuevo producto automáticamente
-              setSelectedProduct(newProduct)
-              setValue("productId", newProduct.id)
-            } catch (error: any) {
-              toast.error("❌ Error al crear producto", {
-                description: error.message || "Por favor, intenta nuevamente",
-                duration: 4000
-              })
-            }
+          onCreateNew={(name) => {
+            setQuickProductName(name)
+            setShowQuickProductCreation(true)
           }}
         />
         {selectedProduct && (
@@ -288,7 +263,44 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
           )}
         </Button>
       </div>
+
     </form>
+
+    {/* Modal para creación rápida de producto - Fuera del form para evitar conflictos */}
+    {showQuickProductCreation && (
+      <QuickProductCreationModal
+        companyId={companyId}
+        warehouses={warehouses}
+        initialProductName={quickProductName}
+        onSuccess={async (productId) => {
+          setShowQuickProductCreation(false)
+          setQuickProductName("")
+          // Recargar el producto para obtener todos sus datos
+          try {
+            const res = await fetch(`/api/companies/${companyId}/products`)
+            if (res.ok) {
+              const products = await res.json()
+              const newProduct = products.find((p: any) => p.id === productId)
+              if (newProduct) {
+                setSelectedProduct(newProduct)
+                setValue("productId", newProduct.id)
+                toast.success("✅ Producto listo para comprar", {
+                  description: `"${newProduct.name}" está disponible en inventario`,
+                  duration: 3000
+                })
+              }
+            }
+          } catch (error) {
+            console.error("Error cargando producto:", error)
+          }
+        }}
+        onCancel={() => {
+          setShowQuickProductCreation(false)
+          setQuickProductName("")
+        }}
+      />
+    )}
+    </>
   )
 }
 
