@@ -91,7 +91,7 @@ export default function CompaniesSettingsPage() {
     <div className="p-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-4">
-          <BackButton href="/dashboard" />
+          <BackButton href="/dashboard/settings" />
         </div>
         <h1 className="text-3xl font-bold mb-6">Configuración de Compañías</h1>
 
