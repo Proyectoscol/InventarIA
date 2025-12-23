@@ -15,7 +15,6 @@ import {
   ArrowRight,
   CheckCircle
 } from "lucide-react"
-import { toast } from "sonner"
 
 export default function DashboardPage() {
   const { data: session, status } = useSession()

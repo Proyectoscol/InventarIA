@@ -55,19 +55,20 @@ export function DashboardHeader() {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-1">
+          <nav className="hidden md:flex items-center space-x-1">
             {navigation.map((item) => {
               const Icon = item.icon
               return (
                 <Link key={item.name} href={item.href}>
                   <Button
                     variant={isActive(item.href) ? "default" : "ghost"}
+                    size="sm"
                     className={`flex items-center space-x-2 ${
-                      isActive(item.href) ? "bg-primary text-white" : ""
+                      isActive(item.href) ? "bg-primary text-white" : "hover:bg-gray-100"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
-                    <span>{item.name}</span>
+                    <span className="text-sm">{item.name}</span>
                   </Button>
                 </Link>
               )
@@ -75,10 +76,13 @@ export function DashboardHeader() {
           </nav>
 
           {/* User menu */}
-          <div className="hidden md:flex items-center space-x-4">
-            <span className="text-sm text-gray-600">
-              {session?.user?.name}
-            </span>
+          <div className="hidden md:flex items-center space-x-3">
+            <div className="flex items-center space-x-2 px-3 py-1.5 rounded-md bg-gray-50">
+              <User className="h-4 w-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">
+                {session?.user?.name}
+              </span>
+            </div>
             <Button
               variant="outline"
               size="sm"
@@ -86,7 +90,7 @@ export function DashboardHeader() {
               className="flex items-center space-x-2"
             >
               <LogOut className="h-4 w-4" />
-              <span>Salir</span>
+              <span className="hidden lg:inline">Salir</span>
             </Button>
           </div>
 
