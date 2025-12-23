@@ -16,14 +16,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
-    // Obtener todas las compañías con alertas habilitadas
+    // Obtener todas las compañías (verificaremos usuarios y alertas después)
     const companies = await prisma.company.findMany({
       include: {
-        alertConfig: {
-          where: {
-            enableAlerts: true
-          }
-        }
+        alertConfig: true
       }
     })
 
