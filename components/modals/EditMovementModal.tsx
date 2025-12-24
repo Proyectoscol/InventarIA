@@ -107,8 +107,9 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
   const form = isPurchase ? purchaseForm : saleForm
   const { register, handleSubmit, watch, setValue, formState: { errors } } = form
 
-  const paymentType = watch("paymentType")
-  const hasShipping = watch("hasShipping")
+  // Solo acceder a estos campos si es una venta
+  const paymentType = isPurchase ? undefined : (saleForm.watch("paymentType") as "cash" | "credit" | "mixed" | undefined)
+  const hasShipping = isPurchase ? false : saleForm.watch("hasShipping")
   const quantity = watch("quantity")
   const unitPrice = watch("unitPrice")
   const total = (unitPrice || 0) * (quantity || 0)
@@ -120,17 +121,17 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
     }
   }, [movement])
 
-  // Inicializar valores de crédito
+  // Inicializar valores de crédito (solo para ventas)
   useEffect(() => {
-    if (paymentType === "credit" || paymentType === "mixed") {
-      const currentDays = watch("creditDays")
+    if (!isPurchase && (paymentType === "credit" || paymentType === "mixed")) {
+      const currentDays = saleForm.watch("creditDays")
       if (!currentDays || currentDays <= 0) {
-        setValue("creditDays", movement.creditDays || 15, { shouldValidate: true })
+        saleForm.setValue("creditDays", movement.creditDays || 15, { shouldValidate: true })
         setCreditDaysType("preset")
       }
     }
     setForceUpdate(prev => prev + 1)
-  }, [paymentType, setValue, watch, movement.creditDays])
+  }, [paymentType, isPurchase, movement.creditDays])
 
   const onSubmit = async (data: EditSaleFormData | EditPurchaseFormData) => {
     setLoading(true)
