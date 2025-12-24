@@ -101,10 +101,6 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
     }
   })
 
-  // Usar el formulario apropiado según el tipo
-  const form = isPurchase ? purchaseForm : saleForm
-  const { register, handleSubmit, formState: { errors } } = form
-
   // Watch values from the appropriate form
   const quantity = isPurchase ? purchaseForm.watch("quantity") : saleForm.watch("quantity")
   const unitPrice = isPurchase ? purchaseForm.watch("unitPrice") : saleForm.watch("unitPrice")
@@ -114,7 +110,15 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
   const paymentType = isPurchase ? undefined : (saleForm.watch("paymentType") as "cash" | "credit" | "mixed" | undefined)
   const hasShipping = isPurchase ? false : saleForm.watch("hasShipping")
   
-  // Helper functions to use the correct form's setValue
+  // Helper functions to use the correct form's methods
+  const register = isPurchase 
+    ? purchaseForm.register
+    : saleForm.register
+  
+  const handleSubmit = isPurchase
+    ? purchaseForm.handleSubmit
+    : saleForm.handleSubmit
+  
   const setValue = isPurchase 
     ? (field: string, value: any, options?: any) => purchaseForm.setValue(field as any, value, options)
     : (field: string, value: any, options?: any) => saleForm.setValue(field as any, value, options)
@@ -122,6 +126,9 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
   const watch = (field: string) => isPurchase
     ? purchaseForm.watch(field as any)
     : saleForm.watch(field as any)
+  
+  // Get errors from the appropriate form
+  const errors = isPurchase ? purchaseForm.formState.errors : saleForm.formState.errors
 
   // Cargar producto seleccionado
   useEffect(() => {
