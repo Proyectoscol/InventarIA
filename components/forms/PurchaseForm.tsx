@@ -203,6 +203,7 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
         <CurrencyInput
           value={price || 0}
           onChange={(val) => setValue("price", val, { shouldValidate: true })}
+          placeholder={priceType === "unit" ? "10.000" : "100.000"}
         />
         {priceType === "total" && quantity && (
           <p className="text-sm text-muted-foreground mt-1">

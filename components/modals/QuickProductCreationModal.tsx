@@ -359,6 +359,7 @@ export function QuickProductCreationModal({
                 <CurrencyInput
                   value={price || 0}
                   onChange={(val) => purchaseForm.setValue("price", val, { shouldValidate: true })}
+                  placeholder={priceType === "unit" ? "10.000" : "100.000"}
                 />
                 {priceType === "total" && quantity && (
                   <p className="text-base text-muted-foreground mt-1">

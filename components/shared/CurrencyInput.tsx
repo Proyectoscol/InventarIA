@@ -15,7 +15,7 @@ interface CurrencyInputProps {
 export function CurrencyInput({ 
   value, 
   onChange, 
-  placeholder = "0",
+  placeholder,
   disabled = false,
   className
 }: CurrencyInputProps) {
@@ -55,7 +55,7 @@ export function CurrencyInput({
         type="text"
         value={displayValue}
         onChange={handleChange}
-        placeholder={placeholder}
+        placeholder={placeholder || "1.000.000"}
         disabled={disabled}
         className={`pl-7 ${className || ""}`}
       />

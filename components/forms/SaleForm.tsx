@@ -13,6 +13,7 @@ import { Select } from "@/components/ui/select"
 import { ProductSearch } from "./ProductSearch"
 import { CustomerForm } from "./CustomerForm"
 import { QuickProductCreationModal } from "@/components/modals/QuickProductCreationModal"
+import { CurrencyInput } from "@/components/shared/CurrencyInput"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -392,21 +393,18 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         )}
 
         {priceInputType === "unit" ? (
-          <Input
-            type="number"
-            step="0.01"
-            {...register("unitPrice", { valueAsNumber: true })}
-            placeholder={lastSalePrice ? lastSalePrice.toString() : "0"}
+          <CurrencyInput
+            value={unitPrice || 0}
+            onChange={(val) => setValue("unitPrice", val, { shouldValidate: true })}
+            placeholder={lastSalePrice ? lastSalePrice.toLocaleString("es-CO") : "1.000.000"}
           />
         ) : (
-          <Input
-            type="number"
-            step="0.01"
-            placeholder="0"
-            value={totalPriceInput}
-            onChange={(e) => {
-              setTotalPriceInput(e.target.value)
+          <CurrencyInput
+            value={parseFloat(totalPriceInput) || 0}
+            onChange={(val) => {
+              setTotalPriceInput(val.toString())
             }}
+            placeholder="1.000.000"
           />
         )}
         
@@ -603,17 +601,14 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
               <>
                 <div>
                   <Label>Contado (COP)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    {...register("cashAmount", { 
-                      valueAsNumber: true,
-                      onChange: (e) => {
-                        const cash = parseFloat(e.target.value) || 0
-                        const credit = total - cash
-                        setValue("creditAmount", credit > 0 ? credit : 0)
-                      }
-                    })}
+                  <CurrencyInput
+                    value={watch("cashAmount") || 0}
+                    onChange={(val) => {
+                      setValue("cashAmount", val, { shouldValidate: true })
+                      const credit = total - val
+                      setValue("creditAmount", credit > 0 ? credit : 0, { shouldValidate: true })
+                    }}
+                    placeholder="500.000"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Total: ${total.toLocaleString("es-CO")} - Crédito: ${(watch("creditAmount") || 0).toLocaleString("es-CO")}
@@ -621,17 +616,14 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
                 </div>
                 <div>
                   <Label>Crédito (COP)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    {...register("creditAmount", { 
-                      valueAsNumber: true,
-                      onChange: (e) => {
-                        const credit = parseFloat(e.target.value) || 0
-                        const cash = total - credit
-                        setValue("cashAmount", cash > 0 ? cash : 0)
-                      }
-                    })}
+                  <CurrencyInput
+                    value={watch("creditAmount") || 0}
+                    onChange={(val) => {
+                      setValue("creditAmount", val, { shouldValidate: true })
+                      const cash = total - val
+                      setValue("cashAmount", cash > 0 ? cash : 0, { shouldValidate: true })
+                    }}
+                    placeholder="500.000"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Total: ${total.toLocaleString("es-CO")} - Contado: ${(watch("cashAmount") || 0).toLocaleString("es-CO")}
@@ -670,10 +662,10 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
           <div className="pl-6 space-y-3">
             <div>
               <Label>Costo de Envío (COP)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                {...register("shippingCost", { valueAsNumber: true })}
+              <CurrencyInput
+                value={watch("shippingCost") || 0}
+                onChange={(val) => setValue("shippingCost", val, { shouldValidate: true })}
+                placeholder="50.000"
               />
             </div>
             <RadioGroup
