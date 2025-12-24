@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +15,7 @@ interface QuickAddStockModalProps {
   productName: string
   warehouseId: string
   warehouseName: string
+  initialQuantity?: number
   onSuccess: () => void
   onCancel: () => void
 }
@@ -25,13 +26,30 @@ export function QuickAddStockModal({
   productName,
   warehouseId,
   warehouseName,
+  initialQuantity,
   onSuccess,
   onCancel
 }: QuickAddStockModalProps) {
-  const [quantity, setQuantity] = useState<number>(1)
+  const [quantity, setQuantity] = useState<number>(initialQuantity || 1)
   const [price, setPrice] = useState<number>(0)
   const [priceType, setPriceType] = useState<"unit" | "total">("unit")
   const [loading, setLoading] = useState(false)
+  const [lastCost, setLastCost] = useState<number | null>(null)
+
+  // Obtener último costo unitario
+  useEffect(() => {
+    fetch(`/api/products/${productId}/last-purchase?warehouseId=${warehouseId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.lastPurchasePrice) {
+          setLastCost(data.lastPurchasePrice)
+          if (!price || price === 0) {
+            setPrice(data.lastPurchasePrice)
+          }
+        }
+      })
+      .catch(() => {})
+  }, [productId, warehouseId, price])
 
   const unitPrice = priceType === "unit" ? price : (quantity > 0 ? price / quantity : 0)
   const totalPrice = priceType === "unit" ? (price * quantity) : price
@@ -93,7 +111,7 @@ export function QuickAddStockModal({
           <div className="flex justify-between items-center">
             <CardTitle className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5" />
-              Añadir Inventario
+              Añadir Más Inventario de este producto
             </CardTitle>
             <Button
               variant="ghost"
@@ -155,10 +173,16 @@ export function QuickAddStockModal({
               </Button>
             </div>
 
+            {lastCost && (
+              <p className="text-sm text-muted-foreground mb-2">
+                💡 Último costo: <span className="font-semibold">${lastCost.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} COP</span>
+              </p>
+            )}
+
             <CurrencyInput
               value={price || 0}
               onChange={(val) => setPrice(val)}
-              placeholder={priceType === "unit" ? "10,000" : "100,000"}
+              placeholder={lastCost ? lastCost.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : (priceType === "unit" ? "10,000" : "100,000")}
             />
             <p className="text-sm text-muted-foreground mt-1">
               {priceType === "unit" ? (

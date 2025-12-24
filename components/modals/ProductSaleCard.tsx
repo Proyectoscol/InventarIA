@@ -9,6 +9,7 @@ import { CurrencyInput } from "@/components/shared/CurrencyInput"
 import { X, Package, Warehouse, Plus } from "lucide-react"
 import { toast } from "sonner"
 import { QuickAddStockModal } from "./QuickAddStockModal"
+import { ConfirmDialog } from "./ConfirmDialog"
 
 interface ProductSaleItem {
   productId: string
@@ -56,6 +57,7 @@ export function ProductSaleCard({
   onStockAdded
 }: ProductSaleCardProps) {
   const [showAddStock, setShowAddStock] = useState(false)
+  const [showStockWarning, setShowStockWarning] = useState(false)
   const [quantity, setQuantity] = useState<number>(1)
   const [unitPrice, setUnitPrice] = useState<number>(0)
   const [totalPriceInput, setTotalPriceInput] = useState<string>("")
@@ -105,8 +107,10 @@ export function ProductSaleCard({
       toast.error("❌ El precio debe ser mayor a 0")
       return
     }
+    
+    // Si la cantidad excede el stock, mostrar advertencia
     if (quantity > stockQuantity) {
-      toast.error(`❌ No hay suficiente stock. Disponible: ${stockQuantity}`)
+      setShowStockWarning(true)
       return
     }
 
@@ -123,6 +127,14 @@ export function ProductSaleCard({
     })
   }
 
+  const handleConfirmAddStock = () => {
+    setShowStockWarning(false)
+    // Calcular la cantidad necesaria
+    const neededQuantity = quantity - stockQuantity
+    setShowAddStock(true)
+    // La cantidad se pasará al modal a través de props
+  }
+
   return (
     <Card className="border-2 border-primary/20">
       <CardHeader className="pb-3">
@@ -132,9 +144,21 @@ export function ProductSaleCard({
               <Package className="h-5 w-5 text-primary" />
               {product.name}
             </CardTitle>
-            <div className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-              <Warehouse className="h-3 w-3" />
-              {warehouseName} • Stock: {stockQuantity}
+            <div className="text-sm text-muted-foreground mt-1 flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <Warehouse className="h-3 w-3" />
+                {warehouseName} • Stock: {stockQuantity}
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAddStock(true)}
+                className="h-6 px-2 text-xs"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Aumentar stock
+              </Button>
             </div>
           </div>
           <Button
@@ -149,20 +173,6 @@ export function ProductSaleCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Botón de Añadir Inventario */}
-        <div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setShowAddStock(true)}
-            className="w-full"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Añadir más inventario
-          </Button>
-        </div>
-
         {/* Cantidad */}
         <div>
           <Label>Cantidad *</Label>
@@ -170,19 +180,13 @@ export function ProductSaleCard({
             type="number"
             inputMode="numeric"
             min="1"
-            max={stockQuantity}
             value={quantity}
             onChange={(e) => {
               const val = parseInt(e.target.value) || 0
-              setQuantity(Math.min(val, stockQuantity))
+              setQuantity(val > 0 ? val : 1)
             }}
             placeholder="0"
           />
-          {quantity > stockQuantity && (
-            <p className="text-xs text-red-600 mt-1">
-              ⚠️ Stock disponible: {stockQuantity}
-            </p>
-          )}
         </div>
 
         {/* Precio de Venta */}
@@ -262,6 +266,18 @@ export function ProductSaleCard({
         </div>
       </CardContent>
 
+      {/* Modal de Advertencia de Stock Insuficiente */}
+      {showStockWarning && (
+        <ConfirmDialog
+          open={showStockWarning}
+          onClose={() => setShowStockWarning(false)}
+          onConfirm={handleConfirmAddStock}
+          title="Stock Insuficiente"
+          description={`Vas a agregar más, vas a vender más productos de los que tienes en stock. Deseas aumentar tu stock para así poder vender más productos?`}
+          type="warning"
+        />
+      )}
+
       {/* Modal de Añadir Inventario */}
       {showAddStock && (
         <QuickAddStockModal
@@ -270,6 +286,7 @@ export function ProductSaleCard({
           productName={product.name}
           warehouseId={warehouseId}
           warehouseName={warehouseName}
+          initialQuantity={quantity > stockQuantity ? quantity - stockQuantity : undefined}
           onSuccess={async () => {
             setShowAddStock(false)
             // Recargar el producto para actualizar el stock
@@ -286,7 +303,13 @@ export function ProductSaleCard({
               console.error("Error recargando producto:", error)
             }
           }}
-          onCancel={() => setShowAddStock(false)}
+          onCancel={() => {
+            setShowAddStock(false)
+            // Si se canceló desde el aviso de stock, volver a mostrar la advertencia
+            if (quantity > stockQuantity) {
+              setShowStockWarning(true)
+            }
+          }}
         />
       )}
     </Card>
