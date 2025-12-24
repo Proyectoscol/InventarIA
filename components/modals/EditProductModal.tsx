@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ProductForm } from "@/components/forms/ProductForm"
@@ -21,6 +22,18 @@ export function EditProductModal({
   onClose,
   onSuccess
 }: EditProductModalProps) {
+  // Cerrar con ESC
+  useEffect(() => {
+    if (!open) return
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose()
+      }
+    }
+    document.addEventListener("keydown", handleEscape)
+    return () => document.removeEventListener("keydown", handleEscape)
+  }, [open, onClose])
+
   if (!open) return null
 
   return (

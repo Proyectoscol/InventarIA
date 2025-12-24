@@ -416,40 +416,42 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
       </div>
 
       {/* Separador visual */}
-      <div className="border-t my-6"></div>
+      {customerId && <div className="border-t my-6"></div>}
 
-      {/* Selección de Productos - Siempre visible */}
-      <div>
-        <div className="flex justify-between items-center mb-2">
-          <Label>Agregar Producto</Label>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setQuickProductName("")
-              setShowQuickProductCreation(true)
-            }}
-          >
-            + Crear Producto
-          </Button>
+      {/* Selección de Productos - Solo mostrar si hay cliente seleccionado */}
+      {customerId && (
+        <div>
+          <div className="flex justify-between items-center mb-2">
+            <Label>Agregar Producto</Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setQuickProductName("")
+                setShowQuickProductCreation(true)
+              }}
+            >
+              + Crear Producto
+            </Button>
+          </div>
+          {showProductSearch && (
+            <ProductSearchWithWarehouse
+              companyId={companyId}
+              onSelect={handleProductSelect}
+              onCreateNew={(name) => {
+                setQuickProductName(name)
+                setShowQuickProductCreation(true)
+              }}
+              placeholder="Buscar por producto o bodega..."
+              excludedProductIds={productItems.map(item => `${item.productId}-${item.warehouseId}`)}
+            />
+          )}
         </div>
-        {showProductSearch && (
-          <ProductSearchWithWarehouse
-            companyId={companyId}
-            onSelect={handleProductSelect}
-            onCreateNew={(name) => {
-              setQuickProductName(name)
-              setShowQuickProductCreation(true)
-            }}
-            placeholder="Buscar por producto o bodega..."
-            excludedProductIds={productItems.map(item => `${item.productId}-${item.warehouseId}`)}
-          />
-        )}
-      </div>
+      )}
 
-      {/* Tarjeta de Configuración de Producto */}
-      {showProductCard && selectedProduct && selectedWarehouseId && (
+      {/* Tarjeta de Configuración de Producto - Solo mostrar si hay cliente */}
+      {customerId && showProductCard && selectedProduct && selectedWarehouseId && (
         <ProductSaleCard
           product={selectedProduct}
           warehouseId={selectedWarehouseId}
@@ -467,8 +469,8 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         />
       )}
 
-      {/* Resumen de Productos */}
-      {productItems.length > 0 && (
+      {/* Resumen de Productos - Solo mostrar si hay cliente */}
+      {customerId && productItems.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

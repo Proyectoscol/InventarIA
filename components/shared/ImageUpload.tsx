@@ -54,39 +54,35 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
   }
   
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {preview ? (
-        <div className="relative w-full max-w-xs">
+        <div className="relative inline-block">
           <img 
             src={preview} 
             alt="Preview" 
-            className="rounded-lg border object-cover w-full h-48"
+            className="rounded-lg border object-cover w-24 h-24"
           />
           <Button
             type="button"
             variant="destructive"
             size="icon"
-            className="absolute top-2 right-2"
+            className="absolute -top-2 -right-2 h-6 w-6"
             onClick={handleRemove}
           >
-            <X className="h-4 w-4" />
+            <X className="h-3 w-3" />
           </Button>
         </div>
       ) : (
-        <div className="border-2 border-dashed rounded-lg p-8 text-center">
-          <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-sm text-muted-foreground mb-4">
-            Arrastra una imagen o haz clic para seleccionar
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => inputRef.current?.click()}
-            disabled={loading}
-          >
-            {loading ? "Procesando..." : "Seleccionar Imagen"}
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => inputRef.current?.click()}
+          disabled={loading}
+          className="flex items-center gap-2"
+        >
+          <Upload className="h-4 w-4" />
+          {loading ? "Procesando..." : "Seleccionar Imagen"}
+        </Button>
       )}
       
       <input
@@ -98,7 +94,7 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
       />
       
       <p className="text-xs text-muted-foreground">
-        Formatos: JPG, PNG, WebP. Máx 5MB. Se comprimirá automáticamente.
+        JPG, PNG, WebP. Máx 5MB. Se comprimirá automáticamente.
       </p>
     </div>
   )
