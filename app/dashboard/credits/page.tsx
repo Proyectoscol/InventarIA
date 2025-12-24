@@ -19,6 +19,7 @@ export default function CreditsPage() {
   const [summary, setSummary] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "overdue" | "paid">("all")
+  const [showPaymentModal, setShowPaymentModal] = useState<any>(null)
 
   // Determinar la ruta de retorno basada en el referrer o usar /dashboard/settings por defecto
   const getBackHref = () => {
@@ -111,6 +112,42 @@ export default function CreditsPage() {
       }
     } catch (error: any) {
       toast.error("❌ Error al marcar crédito como pagado", {
+        description: error.message || "Por favor, intenta nuevamente",
+        duration: 4000
+      })
+    }
+  }
+
+  const handlePayment = async (movement: any, paymentAmount: number, newDueDate?: string, notes?: string) => {
+    try {
+      const res = await fetch(`/api/credits`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          movementId: movement.id,
+          paymentAmount,
+          newDueDate,
+          notes
+        })
+      })
+
+      if (res.ok) {
+        const result = await res.json()
+        toast.success("✅ Abono registrado exitosamente", {
+          description: `Abono de $${paymentAmount.toLocaleString("es-CO")} registrado. Crédito restante: $${result.remainingCredit.toLocaleString("es-CO")}`,
+          duration: 4000
+        })
+        setShowPaymentModal(null)
+        // Recargar créditos
+        if (selectedCompanyId) {
+          fetchCredits(selectedCompanyId, statusFilter)
+        }
+      } else {
+        const error = await res.json()
+        throw new Error(error.error || "Error al registrar abono")
+      }
+    } catch (error: any) {
+      toast.error("❌ Error al registrar abono", {
         description: error.message || "Por favor, intenta nuevamente",
         duration: 4000
       })

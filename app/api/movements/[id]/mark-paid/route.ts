@@ -47,9 +47,13 @@ export async function POST(
       return NextResponse.json({ error: "Este crédito ya fue marcado como pagado" }, { status: 400 })
     }
 
-    // Si es pago mixto, sumar el crédito al contado recibido
+    // Siempre sumar el crédito pagado al contado recibido (representa entrada de dinero real)
     let newCashAmount = movement.cashAmount ? Number(movement.cashAmount) : 0
-    if (movement.paymentType === "mixed") {
+    if (movement.paymentType === "credit") {
+      // Para créditos puros, el cashAmount debe ser igual al total de la venta
+      newCashAmount = Number(movement.totalAmount)
+    } else if (movement.paymentType === "mixed") {
+      // Para pagos mixtos, sumar el monto del crédito al contado existente
       newCashAmount = newCashAmount + creditAmountNum
     }
 
@@ -59,10 +63,8 @@ export async function POST(
       data: {
         creditPaid: true,
         creditPaidDate: paidDate,
-        // Si es pago mixto, actualizar cashAmount sumando el crédito pagado
-        ...(movement.paymentType === "mixed" && {
-          cashAmount: newCashAmount
-        })
+        // Actualizar cashAmount con el total pagado (contado + crédito pagado)
+        cashAmount: newCashAmount
       },
       include: {
         product: true,

@@ -70,13 +70,14 @@ export async function GET(req: NextRequest) {
     }, 0)
     
     // Calcular créditos pagados (solo los que tienen creditPaid = true y creditPaidDate)
+    // Ahora que los créditos pagados se suman al cashAmount, esta lógica se simplifica
     const paidCredits = salesMovements
       .filter(m => m.creditPaid && m.creditPaidDate && (m.paymentType === "credit" || m.paymentType === "mixed"))
       .reduce((sum, m) => {
-        if (m.paymentType === "credit") {
-          return sum + Number(m.creditAmount || m.totalAmount)
-        } else if (m.paymentType === "mixed") {
-          return sum + Number(m.creditAmount || 0)
+        // Los créditos pagados ya están incluidos en el cashAmount del movimiento
+        // Solo sumar si es un crédito puro que no tenía contado inicialmente
+        if (m.paymentType === "credit" && (!m.cashAmount || m.cashAmount === 0)) {
+          return sum + Number(m.totalAmount)
         }
         return sum
       }, 0)
