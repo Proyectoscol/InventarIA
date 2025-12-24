@@ -9,7 +9,8 @@ import { BackButton } from "@/components/shared/BackButton"
 import { CustomerForm } from "@/components/forms/CustomerForm"
 import { CustomerDetailsModal } from "@/components/modals/CustomerDetailsModal"
 import { toast } from "sonner"
-import { User } from "lucide-react"
+import { User, DollarSign } from "lucide-react"
+import Link from "next/link"
 
 export default function CustomersPage() {
   const { data: session, status } = useSession()

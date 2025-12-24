@@ -1,21 +1,16 @@
 "use client"
 
-import { useSession, signOut } from "next-auth/react"
+import { useSession } from "next-auth/react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { 
   Package, 
-  ShoppingCart, 
-  TrendingUp, 
-  Warehouse, 
   Settings, 
   Home,
-  LogOut,
   Menu,
   X,
-  User,
-  DollarSign
+  User
 } from "lucide-react"
 import { useState } from "react"
 
@@ -29,10 +24,6 @@ export function DashboardHeader() {
     { name: "Dashboard", href: "/dashboard", icon: Home },
     { name: "Inventario", href: "/dashboard/inventory", icon: Package },
     { name: "Clientes", href: "/dashboard/settings/customers", icon: User },
-    { name: "Nueva Venta", href: "/dashboard/movements/sale", icon: ShoppingCart },
-    { name: "Nueva Compra", href: "/dashboard/movements/purchase", icon: ShoppingCart },
-    { name: "Estadísticas", href: "/dashboard/stats", icon: TrendingUp },
-    { name: "Créditos", href: "/dashboard/credits", icon: DollarSign },
     { name: "Configuración", href: "/dashboard/settings", icon: Settings },
   ]
 
@@ -84,15 +75,6 @@ export function DashboardHeader() {
                 {session?.user?.name}
               </span>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="flex items-center space-x-2"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden lg:inline">Salir</span>
-            </Button>
           </div>
 
           {/* Mobile menu button */}
@@ -132,17 +114,6 @@ export function DashboardHeader() {
                   </Link>
                 )
               })}
-              <Button
-                variant="outline"
-                className="w-full justify-start mt-4"
-                onClick={() => {
-                  signOut({ callbackUrl: "/login" })
-                  setMobileMenuOpen(false)
-                }}
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                <span>Salir</span>
-              </Button>
             </nav>
           </div>
         )}

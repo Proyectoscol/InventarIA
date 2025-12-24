@@ -13,8 +13,11 @@ import {
   Users, 
   Bell,
   Trash2,
+  DollarSign,
+  LogOut,
   Settings as SettingsIcon
 } from "lucide-react"
+import { signOut } from "next-auth/react"
 
 export default function SettingsPage() {
   const { data: session, status } = useSession()
@@ -69,6 +72,13 @@ export default function SettingsPage() {
       href: "/dashboard/settings/trash",
       icon: Trash2,
       color: "text-red-600"
+    },
+    {
+      title: "Créditos",
+      description: "Gestiona los créditos pendientes y vencidos",
+      href: "/dashboard/credits",
+      icon: DollarSign,
+      color: "text-yellow-600"
     }
   ]
 
@@ -108,6 +118,29 @@ export default function SettingsPage() {
             )
           })}
         </div>
+
+        {/* Botón de salir */}
+        <Card className="mt-8 border-red-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-600">
+              <LogOut className="h-5 w-5" />
+              Sesión
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Cierra tu sesión de forma segura
+            </p>
+            <Button
+              variant="destructive"
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="w-full sm:w-auto"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Cerrar Sesión
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Botón de atrás al final */}
         <div className="mt-8 flex justify-center">
