@@ -388,7 +388,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         
         {lastSalePrice && (
           <p className="text-sm text-muted-foreground mb-2">
-            💡 Último precio de venta: <span className="font-semibold">${lastSalePrice.toLocaleString("es-CO")} COP</span> (por unidad)
+            💡 Último precio de venta: <span className="font-semibold">${lastSalePrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} COP</span> (por unidad)
           </p>
         )}
 
@@ -396,7 +396,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
           <CurrencyInput
             value={unitPrice || 0}
             onChange={(val) => setValue("unitPrice", val, { shouldValidate: true })}
-            placeholder={lastSalePrice ? lastSalePrice.toLocaleString("es-CO") : "1.000.000"}
+            placeholder={lastSalePrice ? lastSalePrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "1,000,000"}
           />
         ) : (
           <CurrencyInput
@@ -404,15 +404,15 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
             onChange={(val) => {
               setTotalPriceInput(val.toString())
             }}
-            placeholder="1.000.000"
+                placeholder="1,000,000"
           />
         )}
         
         <p className="text-sm text-muted-foreground mt-1">
           {priceInputType === "unit" ? (
-            <>Total: <span className="font-semibold">${total.toLocaleString("es-CO")} COP</span></>
+            <>Total: <span className="font-semibold">${total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} COP</span></>
           ) : (
-            <>Precio unitario: <span className="font-semibold">${(unitPrice || 0).toLocaleString("es-CO")} COP</span></>
+            <>Precio unitario: <span className="font-semibold">${(unitPrice || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} COP</span></>
           )}
         </p>
         {errors.unitPrice && (
@@ -608,10 +608,10 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
                       const credit = total - val
                       setValue("creditAmount", credit > 0 ? credit : 0, { shouldValidate: true })
                     }}
-                    placeholder="500.000"
+                    placeholder="500,000"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Total: ${total.toLocaleString("es-CO")} - Crédito: ${(watch("creditAmount") || 0).toLocaleString("es-CO")}
+                    Total: ${total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} - Crédito: ${(watch("creditAmount") || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                   </p>
                 </div>
                 <div>
@@ -623,10 +623,10 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
                       const cash = total - val
                       setValue("cashAmount", cash > 0 ? cash : 0, { shouldValidate: true })
                     }}
-                    placeholder="500.000"
+                    placeholder="500,000"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Total: ${total.toLocaleString("es-CO")} - Contado: ${(watch("cashAmount") || 0).toLocaleString("es-CO")}
+                    Total: ${total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} - Contado: ${(watch("cashAmount") || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                   </p>
                 </div>
               </>
@@ -636,7 +636,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
             {paymentType === "credit" && (
               <div className="p-3 bg-muted rounded-md">
                 <p className="text-sm">
-                  <span className="font-medium">Monto a crédito:</span> ${total.toLocaleString("es-CO")} COP
+                  <span className="font-medium">Monto a crédito:</span> ${total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} COP
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Este monto se registrará como crédito pendiente
@@ -665,7 +665,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
               <CurrencyInput
                 value={watch("shippingCost") || 0}
                 onChange={(val) => setValue("shippingCost", val, { shouldValidate: true })}
-                placeholder="50.000"
+                placeholder="50,000"
               />
             </div>
             <RadioGroup

@@ -19,21 +19,27 @@ export function CurrencyInput({
   disabled = false,
   className
 }: CurrencyInputProps) {
+  // Función para formatear números con coma como separador de miles
+  const formatNumber = (num: number): string => {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+  }
+  
   const [displayValue, setDisplayValue] = useState(
-    value ? value.toLocaleString("es-CO") : ""
+    value ? formatNumber(value) : ""
   )
   
   useEffect(() => {
     if (value === 0) {
       setDisplayValue("")
     } else {
-      setDisplayValue(value.toLocaleString("es-CO"))
+      setDisplayValue(formatNumber(value))
     }
   }, [value])
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value
-    const numericValue = input.replace(/[^0-9]/g, "")
+    // Permitir números y comas (para separadores de miles)
+    const numericValue = input.replace(/[^0-9,]/g, "").replace(/,/g, "")
     
     if (numericValue === "") {
       setDisplayValue("")
@@ -42,7 +48,7 @@ export function CurrencyInput({
     }
     
     const number = parseInt(numericValue)
-    setDisplayValue(number.toLocaleString("es-CO"))
+    setDisplayValue(formatNumber(number))
     onChange(number)
   }
   
@@ -55,7 +61,7 @@ export function CurrencyInput({
         type="text"
         value={displayValue}
         onChange={handleChange}
-        placeholder={placeholder || "1.000.000"}
+        placeholder={placeholder || "1,000,000"}
         disabled={disabled}
         className={`pl-7 ${className || ""}`}
       />
