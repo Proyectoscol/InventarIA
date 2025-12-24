@@ -140,7 +140,7 @@ export default function CreditsPage() {
     <div className="p-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-4">
-          <BackButton href="/dashboard" />
+          <BackButton href={getBackHref()} />
         </div>
         <div className="flex justify-between items-center mb-6">
           <div>
