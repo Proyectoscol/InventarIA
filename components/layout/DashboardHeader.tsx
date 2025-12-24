@@ -31,11 +31,14 @@ export function DashboardHeader() {
     if (href === "/dashboard") {
       return pathname === "/dashboard"
     }
-    // Para rutas específicas, usar coincidencia exacta o startsWith pero con cuidado
-    // Para evitar que /dashboard/settings/customers active /dashboard/settings
+    // Para /dashboard/settings, solo activar si es exactamente /dashboard/settings o subrutas de settings
+    // pero NO si es /dashboard/customers (que ya no es subruta de settings)
     if (href === "/dashboard/settings") {
-      return pathname === "/dashboard/settings" || pathname?.startsWith("/dashboard/settings/")
+      return pathname === "/dashboard/settings" || 
+             (pathname?.startsWith("/dashboard/settings/") && 
+              !pathname?.startsWith("/dashboard/customers"))
     }
+    // Para otras rutas, usar startsWith
     return pathname?.startsWith(href)
   }
 
