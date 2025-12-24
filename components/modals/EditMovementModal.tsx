@@ -57,8 +57,6 @@ type EditSaleFormData = z.infer<typeof editSaleSchema>
 type EditPurchaseFormData = z.infer<typeof editPurchaseSchema>
 type EditMovementFormData = EditSaleFormData | EditPurchaseFormData
 
-type EditMovementFormData = z.infer<typeof editMovementSchema>
-
 interface EditMovementModalProps {
   movement: Movement
   companyId: string
