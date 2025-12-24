@@ -214,6 +214,11 @@ export default function TrashPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Botón de atrás al final */}
+        <div className="mt-8 flex justify-center">
+          <BackButton href="/dashboard/settings" />
+        </div>
       </div>
     </div>
   )

@@ -93,6 +93,9 @@ export default function SalePage() {
             />
           </CardContent>
         </Card>
+        <div className="mt-6 flex justify-center">
+          <BackButton href="/dashboard" />
+        </div>
       </div>
     </div>
   )

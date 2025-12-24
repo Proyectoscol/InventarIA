@@ -337,6 +337,12 @@ export default function StatsPage() {
             onClose={() => setSelectedDate(null)}
           />
         )}
+
+        {/* Botón de atrás al final */}
+        <div className="mt-8 flex justify-center">
+          <BackButton href="/dashboard" />
+        </div>
+      </div>
     </div>
   )
 }

@@ -108,6 +108,11 @@ export default function SettingsPage() {
             )
           })}
         </div>
+
+        {/* Botón de atrás al final */}
+        <div className="mt-8 flex justify-center">
+          <BackButton href="/dashboard" />
+        </div>
       </div>
     </div>
   )

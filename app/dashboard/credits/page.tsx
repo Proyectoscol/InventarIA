@@ -365,6 +365,11 @@ export default function CreditsPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Botón de atrás al final */}
+        <div className="mt-8 flex justify-center">
+          <BackButton href="/dashboard" />
+        </div>
       </div>
     </div>
   )
