@@ -23,13 +23,18 @@ export function DashboardHeader() {
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
     { name: "Inventario", href: "/dashboard/inventory", icon: Package },
-    { name: "Clientes", href: "/dashboard/settings/customers", icon: User },
+    { name: "Clientes", href: "/dashboard/customers", icon: User },
     { name: "Configuración", href: "/dashboard/settings", icon: Settings },
   ]
 
   const isActive = (href: string) => {
     if (href === "/dashboard") {
       return pathname === "/dashboard"
+    }
+    // Para rutas específicas, usar coincidencia exacta o startsWith pero con cuidado
+    // Para evitar que /dashboard/settings/customers active /dashboard/settings
+    if (href === "/dashboard/settings") {
+      return pathname === "/dashboard/settings" || pathname?.startsWith("/dashboard/settings/")
     }
     return pathname?.startsWith(href)
   }

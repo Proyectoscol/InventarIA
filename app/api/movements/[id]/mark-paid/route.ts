@@ -47,12 +47,22 @@ export async function POST(
       return NextResponse.json({ error: "Este crédito ya fue marcado como pagado" }, { status: 400 })
     }
 
+    // Si es pago mixto, sumar el crédito al contado recibido
+    let newCashAmount = movement.cashAmount ? Number(movement.cashAmount) : 0
+    if (movement.paymentType === "mixed") {
+      newCashAmount = newCashAmount + creditAmountNum
+    }
+
     // Actualizar el movimiento
     const updated = await prisma.movement.update({
       where: { id: movementId },
       data: {
         creditPaid: true,
-        creditPaidDate: paidDate
+        creditPaidDate: paidDate,
+        // Si es pago mixto, actualizar cashAmount sumando el crédito pagado
+        ...(movement.paymentType === "mixed" && {
+          cashAmount: newCashAmount
+        })
       },
       include: {
         product: true,
