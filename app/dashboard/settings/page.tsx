@@ -100,7 +100,16 @@ export default function SettingsPage() {
           {settingsOptions.map((option) => {
             const Icon = option.icon
             return (
-              <Link key={option.href} href={option.href}>
+              <Link 
+                key={option.href} 
+                href={option.href}
+                onClick={() => {
+                  // Guardar el referrer para créditos
+                  if (option.href === "/dashboard/credits" && typeof window !== "undefined") {
+                    sessionStorage.setItem("creditsReferrer", "/dashboard/settings")
+                  }
+                }}
+              >
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                   <CardHeader>
                     <div className="flex items-center space-x-3">

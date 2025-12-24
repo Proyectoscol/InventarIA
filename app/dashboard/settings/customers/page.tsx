@@ -82,7 +82,7 @@ export default function CustomersPage() {
       <div className="p-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-4">
-            <BackButton href="/dashboard" />
+            <BackButton href="/dashboard/settings" />
           </div>
           <Card>
             <CardHeader>
@@ -117,12 +117,20 @@ export default function CustomersPage() {
           </div>
           {selectedCompanyId && (
             <div className="flex gap-2">
-              <Link href="/dashboard/credits">
-                <Button variant="outline" className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  Créditos
-                </Button>
-              </Link>
+            <Link 
+              href="/dashboard/credits"
+              onClick={() => {
+                // Guardar el referrer para que créditos sepa de dónde vino
+                if (typeof window !== "undefined") {
+                  sessionStorage.setItem("creditsReferrer", "/dashboard/settings/customers")
+                }
+              }}
+            >
+              <Button variant="outline" className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Créditos
+              </Button>
+            </Link>
               <Button onClick={() => setShowCreateCustomer(true)}>
                 + Crear Cliente
               </Button>

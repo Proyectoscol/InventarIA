@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { BackButton } from "@/components/shared/BackButton"
@@ -116,7 +116,7 @@ export default function CreditsPage() {
       <div className="p-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-4">
-            <BackButton href="/dashboard" />
+            <BackButton href={getBackHref()} />
           </div>
           <Card>
             <CardHeader>
@@ -368,7 +368,7 @@ export default function CreditsPage() {
 
         {/* Botón de atrás al final */}
         <div className="mt-8 flex justify-center">
-          <BackButton href="/dashboard" />
+          <BackButton href={getBackHref()} />
         </div>
       </div>
     </div>
