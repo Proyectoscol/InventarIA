@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select } from "@/components/ui/select"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ImageUpload } from "@/components/shared/ImageUpload"
 import { CurrencyInput } from "@/components/shared/CurrencyInput"
 import { toast } from "sonner"
@@ -328,20 +327,29 @@ export function QuickProductCreationModal({
               </div>
 
               <div>
-                <Label className="text-base">Tipo de Precio</Label>
-                <RadioGroup
-                  value={priceType}
-                  onValueChange={(val) => purchaseForm.setValue("priceType", val as any)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="unit" id="purchase-unit" name="purchase-price-type" />
-                    <Label htmlFor="purchase-unit" className="text-base font-normal cursor-pointer">Precio Unitario</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="total" id="purchase-total" name="purchase-price-type" />
-                    <Label htmlFor="purchase-total" className="text-base font-normal cursor-pointer">Precio Total</Label>
-                  </div>
-                </RadioGroup>
+                <Label className="mb-2 block text-base">Tipo de Precio</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    type="button"
+                    variant={priceType === "unit" ? "default" : "outline"}
+                    className={`h-12 text-base font-medium ${
+                      priceType === "unit" ? "bg-primary text-white" : ""
+                    }`}
+                    onClick={() => purchaseForm.setValue("priceType", "unit", { shouldValidate: true })}
+                  >
+                    Precio Unitario
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={priceType === "total" ? "default" : "outline"}
+                    className={`h-12 text-base font-medium ${
+                      priceType === "total" ? "bg-primary text-white" : ""
+                    }`}
+                    onClick={() => purchaseForm.setValue("priceType", "total", { shouldValidate: true })}
+                  >
+                    Precio Total
+                  </Button>
+                </div>
               </div>
 
               <div>
