@@ -63,9 +63,141 @@ export async function PUT(
       return NextResponse.json({ error: "Movimiento no encontrado" }, { status: 404 })
     }
 
-    // Solo permitir editar ventas por ahora
+    // Manejar edición de compras y ventas de forma diferente
+    if (original.type === "purchase") {
+      // ========== EDICIÓN DE COMPRAS ==========
+      // Solo permitir editar cantidad y precio unitario
+      if (!data.quantity || !data.unitPrice) {
+        return NextResponse.json(
+          { error: "Cantidad y precio unitario son requeridos" },
+          { status: 400 }
+        )
+      }
+
+      const newQuantity = data.quantity
+      const newUnitPrice = data.unitPrice
+      const oldQuantity = original.quantity
+      const quantityDifference = newQuantity - oldQuantity
+
+      // Si se reduce la cantidad, validar que no haya ventas que usen más unidades
+      if (quantityDifference < 0) {
+        // Obtener el batch asociado a esta compra
+        const batch = original.batchId 
+          ? await prisma.batch.findUnique({
+              where: { id: original.batchId }
+            })
+          : null
+
+        if (!batch) {
+          return NextResponse.json(
+            { error: "No se encontró el lote asociado a esta compra" },
+            { status: 400 }
+          )
+        }
+
+        // Calcular cuántas unidades se han vendido de este batch
+        const soldFromBatch = batch.initialQuantity - batch.remainingQty
+        
+        // Si la nueva cantidad es menor que lo ya vendido, no se puede reducir
+        if (newQuantity < soldFromBatch) {
+          return NextResponse.json(
+            { 
+              error: `No se puede reducir la cantidad a ${newQuantity}. Ya se han vendido ${soldFromBatch} unidades de esta compra. La cantidad mínima permitida es ${soldFromBatch}.` 
+            },
+            { status: 400 }
+          )
+        }
+      }
+
+      // Actualizar el batch
+      if (original.batchId) {
+        const batch = await prisma.batch.findUnique({
+          where: { id: original.batchId }
+        })
+
+        if (batch) {
+          // Calcular la nueva cantidad restante
+          const soldFromBatch = batch.initialQuantity - batch.remainingQty
+          const newRemainingQty = newQuantity - soldFromBatch
+
+          await prisma.batch.update({
+            where: { id: original.batchId },
+            data: {
+              initialQuantity: newQuantity,
+              remainingQty: newRemainingQty,
+              unitCost: newUnitPrice
+            }
+          })
+
+          // Actualizar el costo unitario en todas las ventas que usaron este batch
+          // Primero, encontrar todas las ventas que usaron este batch
+          const salesUsingThisBatch = await prisma.movement.findMany({
+            where: {
+              type: "sale",
+              batchId: original.batchId
+            }
+          })
+
+          // Recalcular ganancias para cada venta con el nuevo costo
+          for (const sale of salesUsingThisBatch) {
+            const newUnitCost = Number(newUnitPrice)
+            const newProfit = (Number(sale.unitPrice) - newUnitCost) * sale.quantity
+            
+            // Si hay envío pagado por el vendedor, restarlo de la ganancia
+            let finalProfit = newProfit
+            if (sale.hasShipping && sale.shippingPaidBy === "seller") {
+              finalProfit -= Number(sale.shippingCost || 0)
+            }
+
+            await prisma.movement.update({
+              where: { id: sale.id },
+              data: {
+                unitCost: newUnitCost,
+                profit: finalProfit
+              }
+            })
+          }
+        }
+      }
+
+      // Actualizar stock
+      if (quantityDifference !== 0) {
+        await prisma.stock.update({
+          where: {
+            productId_warehouseId: {
+              productId: original.productId,
+              warehouseId: original.warehouseId
+            }
+          },
+          data: {
+            quantity: quantityDifference > 0 
+              ? { increment: quantityDifference }
+              : { decrement: Math.abs(quantityDifference) }
+          }
+        })
+      }
+
+      // Actualizar el movimiento de compra
+      const updated = await prisma.movement.update({
+        where: { id: movementId },
+        data: {
+          quantity: newQuantity,
+          unitPrice: newUnitPrice,
+          totalAmount: newUnitPrice * newQuantity
+        },
+        include: {
+          product: true,
+          warehouse: true,
+          batch: true
+        }
+      })
+
+      return NextResponse.json(updated)
+    }
+
+    // ========== EDICIÓN DE VENTAS (código existente) ==========
     if (original.type !== "sale") {
-      return NextResponse.json({ error: "Solo se pueden editar ventas" }, { status: 400 })
+      return NextResponse.json({ error: "Tipo de movimiento no soportado" }, { status: 400 })
     }
 
     // Revertir el movimiento original (devolver stock)

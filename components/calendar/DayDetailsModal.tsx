@@ -83,10 +83,8 @@ export function DayDetailsModal({ date, companyId, onClose }: DayDetailsModalPro
   }
 
   const handleEditMovement = (movement: any) => {
-    // Solo permitir editar ventas
-    if (movement.type === "sale") {
-      setEditingMovement(movement)
-    }
+    // Permitir editar tanto compras como ventas
+    setEditingMovement(movement)
   }
 
   const handleEditSuccess = () => {

@@ -15,7 +15,8 @@ import { toast } from "sonner"
 import { X } from "lucide-react"
 import { Movement } from "@/types"
 
-const editMovementSchema = z.object({
+// Schema para ventas
+const editSaleSchema = z.object({
   productId: z.string().min(1, "Selecciona un producto"),
   quantity: z.number().min(1, "Cantidad mínima: 1"),
   unitPrice: z.number().min(0, "Precio debe ser positivo"),
@@ -46,6 +47,16 @@ const editMovementSchema = z.object({
   path: ["creditDays"]
 })
 
+// Schema para compras (solo cantidad y precio unitario)
+const editPurchaseSchema = z.object({
+  quantity: z.number().min(1, "Cantidad mínima: 1"),
+  unitPrice: z.number().min(0, "Precio debe ser positivo")
+})
+
+type EditSaleFormData = z.infer<typeof editSaleSchema>
+type EditPurchaseFormData = z.infer<typeof editPurchaseSchema>
+type EditMovementFormData = EditSaleFormData | EditPurchaseFormData
+
 type EditMovementFormData = z.infer<typeof editMovementSchema>
 
 interface EditMovementModalProps {
@@ -65,14 +76,10 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
   const [customCreditDays, setCustomCreditDays] = useState<string>("")
   const [forceUpdate, setForceUpdate] = useState(0)
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    setValue,
-    formState: { errors }
-  } = useForm<EditMovementFormData>({
-    resolver: zodResolver(editMovementSchema),
+  const isPurchase = movement.type === "purchase"
+  
+  const saleForm = useForm<EditSaleFormData>({
+    resolver: zodResolver(editSaleSchema),
     defaultValues: {
       productId: movement.productId,
       quantity: Number(movement.quantity),
@@ -87,6 +94,18 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
       notes: movement.notes || ""
     }
   })
+
+  const purchaseForm = useForm<EditPurchaseFormData>({
+    resolver: zodResolver(editPurchaseSchema),
+    defaultValues: {
+      quantity: Number(movement.quantity),
+      unitPrice: Number(movement.unitPrice)
+    }
+  })
+
+  // Usar el formulario apropiado según el tipo
+  const form = isPurchase ? purchaseForm : saleForm
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = form
 
   const paymentType = watch("paymentType")
   const hasShipping = watch("hasShipping")
@@ -113,33 +132,64 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
     setForceUpdate(prev => prev + 1)
   }, [paymentType, setValue, watch, movement.creditDays])
 
-  const onSubmit = async (data: EditMovementFormData) => {
+  const onSubmit = async (data: EditSaleFormData | EditPurchaseFormData) => {
     setLoading(true)
     try {
-      const calculatedTotal = data.unitPrice * data.quantity
+      if (isPurchase) {
+        // Para compras, solo enviar cantidad y precio unitario
+        const purchaseData = data as EditPurchaseFormData
+        const payload = {
+          quantity: purchaseData.quantity,
+          unitPrice: purchaseData.unitPrice
+        }
+
+        const res = await fetch(`/api/movements/${movement.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        })
+
+        if (!res.ok) {
+          const error = await res.json()
+          throw new Error(error.error || "Error al actualizar compra")
+        }
+
+        toast.success("✅ Compra actualizada exitosamente", {
+          description: "Los cambios se han guardado correctamente. Las ventas relacionadas se han actualizado automáticamente.",
+          duration: 4000
+        })
+        
+        onSuccess()
+        onClose()
+        return
+      }
+
+      // Para ventas, usar la lógica existente
+      const saleData = data as EditSaleFormData
+      const calculatedTotal = saleData.unitPrice * saleData.quantity
       
       let finalCashAmount: number | undefined = undefined
       let finalCreditAmount: number | undefined = undefined
       
-      if (data.paymentType === "cash") {
+      if (saleData.paymentType === "cash") {
         finalCashAmount = calculatedTotal
         finalCreditAmount = undefined
-      } else if (data.paymentType === "credit") {
+      } else if (saleData.paymentType === "credit") {
         finalCashAmount = undefined
         finalCreditAmount = calculatedTotal
-      } else if (data.paymentType === "mixed") {
-        finalCashAmount = data.cashAmount || 0
-        finalCreditAmount = data.creditAmount || 0
+      } else if (saleData.paymentType === "mixed") {
+        finalCashAmount = saleData.cashAmount || 0
+        finalCreditAmount = saleData.creditAmount || 0
       }
 
       const payload = {
-        ...data,
+        ...saleData,
         companyId,
         warehouseId: movement.warehouseId,
         customerId: movement.customerId,
         cashAmount: finalCashAmount,
         creditAmount: finalCreditAmount,
-        creditDays: data.paymentType === "credit" || data.paymentType === "mixed" ? data.creditDays : undefined
+        creditDays: saleData.paymentType === "credit" || saleData.paymentType === "mixed" ? saleData.creditDays : undefined
       }
 
       const res = await fetch(`/api/movements/${movement.id}`, {
@@ -516,15 +566,17 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
               />
             </div>
 
-            {/* Botones */}
-            <div className="flex gap-3">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={loading} className="flex-1">
-                {loading ? "Guardando..." : "✅ Guardar Cambios"}
-              </Button>
-            </div>
+                {/* Botones */}
+                <div className="flex gap-3">
+                  <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={loading} className="flex-1">
+                    {loading ? "Guardando..." : "✅ Guardar Cambios"}
+                  </Button>
+                </div>
+              </>
+            )}
           </form>
         </CardContent>
       </Card>
