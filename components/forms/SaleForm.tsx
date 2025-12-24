@@ -312,6 +312,10 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
           }}
           placeholder="Buscar cliente..."
         />
+        <input
+          type="hidden"
+          {...register("customerId", { required: "Cliente es obligatorio" })}
+        />
         {errors.customerId && (
           <p className="text-sm text-red-500 mt-1">{errors.customerId.message}</p>
         )}
