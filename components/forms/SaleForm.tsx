@@ -79,6 +79,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
   const [showCreateCustomer, setShowCreateCustomer] = useState(false)
   const [showQuickProductCreation, setShowQuickProductCreation] = useState(false)
   const [quickProductName, setQuickProductName] = useState("")
+  const [quickCustomerName, setQuickCustomerName] = useState("")
   const [customers, setCustomers] = useState(initialCustomers)
   const [creditDaysType, setCreditDaysType] = useState<"preset" | "custom">("preset")
   const [customCreditDays, setCustomCreditDays] = useState<string>("")
@@ -291,21 +292,26 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => setShowCreateCustomer(true)}
+            onClick={() => {
+              const searchValue = "" // No hay campo de búsqueda visible, abrir modal vacío
+              setShowCreateCustomer(true)
+            }}
           >
             + Crear Cliente
           </Button>
         </div>
-        <Select 
-          value={customerId || ""}
-          onChange={(e) => setValue("customerId", e.target.value, { shouldValidate: true })}
-          required
-        >
-          <option value="">Seleccionar cliente...</option>
-          {customers.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </Select>
+        <CustomerSearch
+          companyId={companyId}
+          onSelect={(customer) => {
+            setValue("customerId", customer.id, { shouldValidate: true })
+          }}
+          onCreateNew={(name) => {
+            // Guardar el nombre para pre-llenar el formulario
+            setQuickCustomerName(name)
+            setShowCreateCustomer(true)
+          }}
+          placeholder="Buscar cliente..."
+        />
         {errors.customerId && (
           <p className="text-sm text-red-500 mt-1">{errors.customerId.message}</p>
         )}
@@ -313,7 +319,20 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
 
       {/* Selección de Productos */}
       <div>
-        <Label>Agregar Producto</Label>
+        <div className="flex justify-between items-center mb-2">
+          <Label>Agregar Producto</Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setQuickProductName("")
+              setShowQuickProductCreation(true)
+            }}
+          >
+            + Crear Producto
+          </Button>
+        </div>
         <ProductSearchWithWarehouse
           companyId={companyId}
           onSelect={handleProductSelect}

@@ -242,6 +242,19 @@ export function QuickProductCreationModal({
               className="space-y-6"
             >
               <div>
+                <Label className="text-base">Bodega *</Label>
+                <Select {...productForm.register("warehouseId")} required>
+                  <option value="">Seleccionar...</option>
+                  {warehouses.map((w) => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </Select>
+                {productForm.formState.errors.warehouseId && (
+                  <p className="text-base text-red-500">{productForm.formState.errors.warehouseId?.message}</p>
+                )}
+              </div>
+
+              <div>
                 <Label htmlFor="name" className="text-base">Nombre del Producto *</Label>
                 <Input
                   id="name"
@@ -270,19 +283,6 @@ export function QuickProductCreationModal({
                   value={productForm.watch("imageBase64")}
                   onChange={(base64) => productForm.setValue("imageBase64", base64 || "")}
                 />
-              </div>
-
-              <div>
-                <Label className="text-base">Bodega *</Label>
-                <Select {...productForm.register("warehouseId")} required>
-                  <option value="">Seleccionar...</option>
-                  {warehouses.map((w) => (
-                    <option key={w.id} value={w.id}>{w.name}</option>
-                  ))}
-                </Select>
-                {productForm.formState.errors.warehouseId && (
-                  <p className="text-base text-red-500">{productForm.formState.errors.warehouseId?.message}</p>
-                )}
               </div>
 
               <div>
