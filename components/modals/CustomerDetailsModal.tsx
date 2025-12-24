@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button"
 import { X, ShoppingCart, DollarSign, TrendingUp, Package, Calendar, CreditCard, Edit } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Customer, Movement } from "@/types"
+import { EditMovementModal } from "./EditMovementModal"
 
 interface CustomerDetailsModalProps {
   customer: Customer
@@ -20,11 +20,25 @@ export function CustomerDetailsModal({ customer, companyId, onClose }: CustomerD
   const [movements, setMovements] = useState<Movement[]>([])
   const [summary, setSummary] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
+  const [editingMovement, setEditingMovement] = useState<Movement | null>(null)
+  const [warehouses, setWarehouses] = useState<Array<{ id: string; name: string }>>([])
 
   useEffect(() => {
     fetchCustomerMovements()
+    fetchWarehouses()
   }, [customer.id, companyId])
+
+  const fetchWarehouses = async () => {
+    try {
+      const res = await fetch(`/api/companies/${companyId}/warehouses`)
+      if (res.ok) {
+        const data = await res.json()
+        setWarehouses(data)
+      }
+    } catch (error) {
+      console.error("Error cargando bodegas:", error)
+    }
+  }
 
   const fetchCustomerMovements = async () => {
     setLoading(true)
@@ -45,9 +59,13 @@ export function CustomerDetailsModal({ customer, companyId, onClose }: CustomerD
     }
   }
 
-  const handleEditMovement = (movementId: string) => {
-    router.push(`/dashboard/movements/sale?edit=${movementId}`)
-    onClose()
+  const handleEditMovement = (movement: Movement) => {
+    setEditingMovement(movement)
+  }
+
+  const handleEditSuccess = () => {
+    fetchCustomerMovements()
+    setEditingMovement(null)
   }
 
   if (loading) {
@@ -97,7 +115,7 @@ export function CustomerDetailsModal({ customer, companyId, onClose }: CustomerD
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-blue-700">
-                    ${summary.totalSales.toLocaleString("es-CO")}
+                    ${summary.totalSales.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {summary.totalMovements} {summary.totalMovements === 1 ? "movimiento" : "movimientos"}
@@ -113,7 +131,7 @@ export function CustomerDetailsModal({ customer, companyId, onClose }: CustomerD
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-700">
-                    ${summary.totalProfit.toLocaleString("es-CO")}
+                    ${summary.totalProfit.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {summary.totalQuantity} {summary.totalQuantity === 1 ? "unidad" : "unidades"}
@@ -129,7 +147,7 @@ export function CustomerDetailsModal({ customer, companyId, onClose }: CustomerD
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-yellow-700">
-                    ${summary.totalCash.toLocaleString("es-CO")}
+                    ${summary.totalCash.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                   </div>
                 </CardContent>
               </Card>
@@ -142,11 +160,11 @@ export function CustomerDetailsModal({ customer, companyId, onClose }: CustomerD
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-orange-700">
-                    ${summary.pendingCredit.toLocaleString("es-CO")}
+                    ${summary.pendingCredit.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                   </div>
                   {summary.totalCredit > 0 && (
                     <div className="text-xs text-muted-foreground mt-1">
-                      Total crédito: ${summary.totalCredit.toLocaleString("es-CO")}
+                      Total crédito: ${summary.totalCredit.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                     </div>
                   )}
                 </CardContent>
@@ -182,7 +200,7 @@ export function CustomerDetailsModal({ customer, companyId, onClose }: CustomerD
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleEditMovement(movement.id)}
+                          onClick={() => handleEditMovement(movement)}
                         >
                           <Edit className="h-4 w-4 text-muted-foreground" />
                         </Button>
@@ -228,6 +246,17 @@ export function CustomerDetailsModal({ customer, companyId, onClose }: CustomerD
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal de edición */}
+      {editingMovement && (
+        <EditMovementModal
+          movement={editingMovement}
+          companyId={companyId}
+          warehouses={warehouses}
+          onSuccess={handleEditSuccess}
+          onClose={() => setEditingMovement(null)}
+        />
+      )}
     </div>
   )
 }
