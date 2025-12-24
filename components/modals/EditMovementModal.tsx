@@ -263,7 +263,7 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
           </div>
         </CardHeader>
         <CardContent className="p-6">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={isPurchase ? purchaseForm.handleSubmit(onSubmit) : saleForm.handleSubmit(onSubmit)} className="space-y-6">
             {isPurchase ? (
               // ========== FORMULARIO DE COMPRA ==========
               <>
