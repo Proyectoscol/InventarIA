@@ -3,10 +3,8 @@ import { prisma } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+// GET: Obtener productos eliminados (papelera)
+export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session) {
@@ -14,35 +12,38 @@ export async function GET(
     }
 
     const { searchParams } = new URL(req.url)
-    const q = searchParams.get("q") || ""
+    const companyId = searchParams.get("companyId")
 
-    const where: any = {
-      companyId: params.id,
-      deletedAt: null // Solo productos activos (no eliminados)
-    }
-
-    if (q) {
-      where.nameLower = {
-        contains: q.toLowerCase()
-      }
+    if (!companyId) {
+      return NextResponse.json({ error: "companyId requerido" }, { status: 400 })
     }
 
     const products = await prisma.product.findMany({
-      where,
+      where: {
+        companyId,
+        deletedAt: { not: null } // Solo productos eliminados
+      },
       include: {
-        stock: {
-          include: {
-            warehouse: true
+        movements: {
+          select: {
+            id: true
+          },
+          take: 1
+        },
+        _count: {
+          select: {
+            movements: true
           }
         }
       },
       orderBy: {
-        name: "asc"
+        deletedAt: "desc"
       }
     })
 
     return NextResponse.json(products)
   } catch (error: any) {
+    console.error("Error obteniendo productos eliminados:", error)
     return NextResponse.json(
       { error: error.message },
       { status: 500 }

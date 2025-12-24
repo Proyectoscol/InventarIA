@@ -21,7 +21,10 @@ export async function GET(req: NextRequest) {
     
     const whereClause: any = {
       type: "sale",
-      product: { companyId }
+      product: { 
+        companyId,
+        deletedAt: null // Solo productos activos
+      }
     }
     
     if (from && to) {
@@ -62,11 +65,14 @@ export async function GET(req: NextRequest) {
       take: 10
     })
     
-    // Enriquecer con datos del producto
+    // Enriquecer con datos del producto (solo activos)
     const enrichedTop = await Promise.all(
       topProducts.map(async (item) => {
-        const product = await prisma.product.findUnique({
-          where: { id: item.productId }
+        const product = await prisma.product.findFirst({
+          where: { 
+            id: item.productId,
+            deletedAt: null // Solo productos activos
+          }
         })
         return {
           productId: item.productId,

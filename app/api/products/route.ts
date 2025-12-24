@@ -13,14 +13,13 @@ export async function POST(req: NextRequest) {
 
     const data = await req.json()
     
-    // Validar nombre único
+    // Validar nombre único (solo productos activos)
     const nameLower = data.name.toLowerCase().trim()
-    const existing = await prisma.product.findUnique({
+    const existing = await prisma.product.findFirst({
       where: {
-        companyId_nameLower: {
-          companyId: data.companyId,
-          nameLower
-        }
+        companyId: data.companyId,
+        nameLower,
+        deletedAt: null // Solo productos activos
       }
     })
     

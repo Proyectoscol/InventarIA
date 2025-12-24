@@ -23,6 +23,7 @@ export async function GET(
     const products = await prisma.product.findMany({
       where: {
         companyId: params.id,
+        deletedAt: null, // Solo productos activos
         nameLower: {
           contains: q.toLowerCase()
         }

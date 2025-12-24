@@ -12,7 +12,7 @@ import { ProductForm } from "@/components/forms/ProductForm"
 import { BackButton } from "@/components/shared/BackButton"
 import { EditProductModal } from "@/components/modals/EditProductModal"
 import { EditThresholdModal } from "@/components/modals/EditThresholdModal"
-import { Edit, Package, Calendar, DollarSign, ShoppingCart } from "lucide-react"
+import { Edit, Package, Calendar, DollarSign, ShoppingCart, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 export default function InventoryPage() {
@@ -116,6 +116,42 @@ export default function InventoryPage() {
   const handleAddStock = (product: any) => {
     // Redirigir a página de compra con producto y bodega pre-seleccionados
     router.push(`/dashboard/movements/purchase?productId=${product.id}&warehouseId=${selectedWarehouseId}`)
+  }
+
+  const handleDeleteProduct = async (product: any) => {
+    if (!confirm(`¿Estás seguro de eliminar el producto "${product.name}"?\n\n${product.movements?.length > 0 ? "Este producto tiene movimientos históricos y será movido a la papelera." : "Este producto será eliminado completamente."}`)) {
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/products/${product.id}`, {
+        method: "DELETE"
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || "Error al eliminar producto")
+      }
+
+      const result = await res.json()
+      
+      toast.success(result.softDelete 
+        ? "✅ Producto movido a la papelera" 
+        : "✅ Producto eliminado completamente", {
+        description: result.message,
+        duration: 3000
+      })
+
+      // Refrescar lista de productos
+      if (companyId && selectedWarehouseId) {
+        fetchProducts(companyId, selectedWarehouseId)
+      }
+    } catch (error: any) {
+      toast.error("❌ Error al eliminar producto", {
+        description: error.message || "Por favor, intenta nuevamente",
+        duration: 4000
+      })
+    }
   }
 
   if (status === "loading") {
@@ -233,14 +269,24 @@ export default function InventoryPage() {
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-lg flex-1">{product.name}</CardTitle>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditProduct(product)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditProduct(product)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteProduct(product)}
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">

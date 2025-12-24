@@ -12,6 +12,7 @@ import {
   Warehouse, 
   Users, 
   Bell,
+  Trash2,
   Settings as SettingsIcon
 } from "lucide-react"
 
@@ -61,6 +62,13 @@ export default function SettingsPage() {
       href: "/dashboard/settings/alerts",
       icon: Bell,
       color: "text-orange-600"
+    },
+    {
+      title: "Papelera",
+      description: "Productos eliminados con movimientos históricos",
+      href: "/dashboard/settings/trash",
+      icon: Trash2,
+      color: "text-red-600"
     }
   ]
 

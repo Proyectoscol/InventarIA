@@ -17,9 +17,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "companyId requerido" }, { status: 400 })
     }
     
-    // Obtener productos con stock bajo
+    // Obtener productos con stock bajo (solo activos)
     const products = await prisma.product.findMany({
-      where: { companyId },
+      where: { 
+        companyId,
+        deletedAt: null // Solo productos activos
+      },
       include: {
         stock: {
           include: {

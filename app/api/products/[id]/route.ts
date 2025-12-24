@@ -14,8 +14,11 @@ export async function GET(
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
-    const product = await prisma.product.findUnique({
-      where: { id: params.id },
+    const product = await prisma.product.findFirst({
+      where: { 
+        id: params.id,
+        deletedAt: null // Solo productos activos
+      },
       include: {
         stock: true,
         batches: {
@@ -116,14 +119,15 @@ export async function PUT(
       }
     }
 
-    // Verificar unicidad del nombre si se está cambiando
+    // Verificar unicidad del nombre si se está cambiando (solo productos activos)
     if (data.name && data.name.trim().toLowerCase() !== existingProduct.nameLower) {
       const nameLower = data.name.trim().toLowerCase()
       const duplicate = await prisma.product.findFirst({
         where: {
           companyId: existingProduct.companyId,
           nameLower: nameLower,
-          id: { not: productId }
+          id: { not: productId },
+          deletedAt: null // Solo productos activos
         }
       })
 
@@ -146,6 +150,73 @@ export async function PUT(
     console.error("Error actualizando producto:", error)
     return NextResponse.json(
       { error: error.message || "Error actualizando producto" },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
+    const productId = params.id
+
+    // Obtener producto con sus movimientos (incluye eliminados para poder restaurarlos)
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      include: {
+        movements: {
+          take: 1 // Solo necesitamos saber si tiene movimientos
+        },
+        _count: {
+          select: {
+            movements: true
+          }
+        }
+      }
+    })
+
+    if (!product) {
+      return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 })
+    }
+
+    // Si el producto tiene movimientos, hacer soft delete
+    if (product._count.movements > 0) {
+      const updated = await prisma.product.update({
+        where: { id: productId },
+        data: {
+          deletedAt: new Date()
+        }
+      })
+
+      return NextResponse.json({ 
+        success: true,
+        softDelete: true,
+        message: "Producto movido a la papelera (tiene movimientos históricos)",
+        product: updated
+      })
+    }
+
+    // Si no tiene movimientos, hacer hard delete (eliminación completa)
+    await prisma.product.delete({
+      where: { id: productId }
+    })
+
+    return NextResponse.json({ 
+      success: true,
+      softDelete: false,
+      message: "Producto eliminado completamente"
+    })
+  } catch (error: any) {
+    console.error("Error eliminando producto:", error)
+    return NextResponse.json(
+      { error: error.message || "Error eliminando producto" },
       { status: 500 }
     )
   }
