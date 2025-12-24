@@ -103,14 +103,25 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
 
   // Usar el formulario apropiado según el tipo
   const form = isPurchase ? purchaseForm : saleForm
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = form
+  const { register, handleSubmit, formState: { errors } } = form
+
+  // Watch values from the appropriate form
+  const quantity = isPurchase ? purchaseForm.watch("quantity") : saleForm.watch("quantity")
+  const unitPrice = isPurchase ? purchaseForm.watch("unitPrice") : saleForm.watch("unitPrice")
+  const total = (unitPrice || 0) * (quantity || 0)
 
   // Solo acceder a estos campos si es una venta
   const paymentType = isPurchase ? undefined : (saleForm.watch("paymentType") as "cash" | "credit" | "mixed" | undefined)
   const hasShipping = isPurchase ? false : saleForm.watch("hasShipping")
-  const quantity = watch("quantity")
-  const unitPrice = watch("unitPrice")
-  const total = (unitPrice || 0) * (quantity || 0)
+  
+  // Helper functions to use the correct form's setValue
+  const setValue = isPurchase 
+    ? (field: string, value: any, options?: any) => purchaseForm.setValue(field as any, value, options)
+    : (field: string, value: any, options?: any) => saleForm.setValue(field as any, value, options)
+  
+  const watch = (field: string) => isPurchase
+    ? purchaseForm.watch(field as any)
+    : saleForm.watch(field as any)
 
   // Cargar producto seleccionado
   useEffect(() => {
@@ -299,12 +310,12 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
                 <div>
                   <Label>Costo Unitario (COP) *</Label>
                   <CurrencyInput
-                    value={watch("unitPrice") || 0}
-                    onChange={(val) => setValue("unitPrice", val, { shouldValidate: true })}
+                    value={unitPrice || 0}
+                    onChange={(val) => purchaseForm.setValue("unitPrice", val, { shouldValidate: true })}
                     placeholder="10,000"
                   />
                   <p className="text-sm text-muted-foreground mt-1">
-                    Total: <span className="font-semibold">${((watch("unitPrice") || 0) * (watch("quantity") || 0)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} COP</span>
+                    Total: <span className="font-semibold">${((unitPrice || 0) * (quantity || 0)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} COP</span>
                   </p>
                   {errors.unitPrice && (
                     <p className="text-sm text-red-500 mt-1">{errors.unitPrice.message}</p>
