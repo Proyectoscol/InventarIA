@@ -292,7 +292,7 @@ export default function InventoryPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {products.map((product) => {
               const stock = product.stock?.find((s: any) => s.warehouseId === selectedWarehouseId)
               const stockQuantity = stock?.quantity ?? 0 // Usar ?? para que 0 se muestre correctamente
