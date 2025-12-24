@@ -58,11 +58,14 @@ export default function CompaniesSettingsPage() {
 
       if (res.ok) {
         toast.success("✅ Compañía creada exitosamente", {
-          description: "La compañía se ha agregado correctamente",
-          duration: 3000
+          description: "Redirigiendo a crear bodega...",
+          duration: 2000
         })
         setNewCompanyName("")
-        fetchCompanies()
+        // Redirigir a crear bodega después de crear la compañía
+        setTimeout(() => {
+          router.push("/dashboard/settings/warehouses")
+        }, 1000)
       } else {
         console.error("Error del servidor:", data)
         toast.error("❌ Error al crear compañía", {

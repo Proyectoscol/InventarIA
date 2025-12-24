@@ -89,12 +89,15 @@ export default function WarehousesPage() {
 
       if (res.ok) {
         toast.success("✅ Bodega creada exitosamente", {
-          description: "La bodega se ha agregado correctamente",
-          duration: 3000
+          description: "Redirigiendo al dashboard...",
+          duration: 2000
         })
         setNewWarehouseName("")
         setNewWarehouseDescription("")
-        fetchWarehouses(selectedCompanyId)
+        // Redirigir al dashboard principal después de crear la bodega
+        setTimeout(() => {
+          router.push("/dashboard")
+        }, 1000)
       } else {
         toast.error("❌ Error al crear bodega", {
           description: data.error || "Por favor, intenta nuevamente",
