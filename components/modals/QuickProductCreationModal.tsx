@@ -19,6 +19,7 @@ type ProductFormData = {
   description?: string
   imageBase64?: string
   minStockThreshold: number
+  warehouseId?: string // Bodega seleccionada en paso 1
 }
 
 type PurchaseFormData = {
@@ -58,7 +59,8 @@ export function QuickProductCreationModal({
       name: initialProductName,
       description: "",
       imageBase64: "",
-      minStockThreshold: 10
+      minStockThreshold: 10,
+      warehouseId: ""
     }
   })
 
@@ -83,6 +85,12 @@ export function QuickProductCreationModal({
       toast.error("❌ El nombre del producto es requerido")
       return
     }
+    
+    // Validar que la bodega esté seleccionada
+    if (!data.warehouseId) {
+      toast.error("❌ Debes seleccionar una bodega")
+      return
+    }
 
     setLoading(true)
     try {
@@ -90,7 +98,10 @@ export function QuickProductCreationModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...data,
+          name: data.name,
+          description: data.description,
+          imageBase64: data.imageBase64,
+          minStockThreshold: data.minStockThreshold,
           companyId
         })
       })
@@ -102,6 +113,10 @@ export function QuickProductCreationModal({
 
       const newProduct = await res.json()
       setCreatedProductId(newProduct.id)
+      
+      // Pre-seleccionar la bodega en el paso 2
+      purchaseForm.setValue("warehouseId", data.warehouseId)
+      
       toast.success("✅ Producto creado exitosamente", {
         description: "Ahora registra la compra inicial para agregar stock",
         duration: 3000
@@ -255,6 +270,19 @@ export function QuickProductCreationModal({
                   value={productForm.watch("imageBase64")}
                   onChange={(base64) => productForm.setValue("imageBase64", base64 || "")}
                 />
+              </div>
+
+              <div>
+                <Label className="text-base">Bodega *</Label>
+                <Select {...productForm.register("warehouseId")} required>
+                  <option value="">Seleccionar...</option>
+                  {warehouses.map((w) => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </Select>
+                {productForm.formState.errors.warehouseId && (
+                  <p className="text-base text-red-500">{productForm.formState.errors.warehouseId?.message}</p>
+                )}
               </div>
 
               <div>
