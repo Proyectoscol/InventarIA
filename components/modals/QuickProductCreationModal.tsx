@@ -262,6 +262,7 @@ export function QuickProductCreationModal({
                 <Input
                   id="minStockThreshold"
                   type="number"
+                  inputMode="numeric"
                   {...productForm.register("minStockThreshold", { valueAsNumber: true })}
                   placeholder="10"
                 />
@@ -316,6 +317,7 @@ export function QuickProductCreationModal({
                 <Label className="text-base">Cantidad *</Label>
                 <Input
                   type="number"
+                  inputMode="numeric"
                   min="1"
                   {...purchaseForm.register("quantity", { valueAsNumber: true })}
                   placeholder="0"

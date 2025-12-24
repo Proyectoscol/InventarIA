@@ -105,6 +105,7 @@ export function EditThresholdModal({
               <Input
                 id="threshold"
                 type="number"
+                inputMode="numeric"
                 min="0"
                 value={threshold}
                 onChange={(e) => setThreshold(e.target.value)}

@@ -165,6 +165,7 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
         <Label>Cantidad *</Label>
         <Input
           type="number"
+          inputMode="numeric"
           min="1"
           {...register("quantity", { valueAsNumber: true })}
           placeholder="0"

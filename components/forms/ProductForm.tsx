@@ -119,6 +119,7 @@ export function ProductForm({ companyId, product, onSuccess, onCancel }: Product
         <Input
           id="minStockThreshold"
           type="number"
+          inputMode="numeric"
           {...register("minStockThreshold", { valueAsNumber: true })}
           placeholder="10"
         />

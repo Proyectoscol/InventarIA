@@ -352,6 +352,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         <Label>Cantidad</Label>
         <Input
           type="number"
+          inputMode="numeric"
           {...register("quantity", { valueAsNumber: true })}
           placeholder="0"
         />
@@ -579,6 +580,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
               ) : (
                 <Input
                   type="number"
+                  inputMode="numeric"
                   min="1"
                   placeholder="Ej: 45"
                   value={customCreditDays}

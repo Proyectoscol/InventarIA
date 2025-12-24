@@ -59,6 +59,7 @@ export function CurrencyInput({
       </span>
       <Input
         type="text"
+        inputMode="numeric"
         value={displayValue}
         onChange={handleChange}
         placeholder={placeholder || "1,000,000"}

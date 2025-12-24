@@ -208,6 +208,7 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
               <Label>Cantidad *</Label>
               <Input
                 type="number"
+                inputMode="numeric"
                 {...register("quantity", { valueAsNumber: true })}
                 placeholder="0"
                 min="1"
