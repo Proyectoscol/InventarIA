@@ -86,7 +86,6 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
   const [customCreditDays, setCustomCreditDays] = useState<string>("")
   const [forceUpdate, setForceUpdate] = useState(0)
   const [showProductSearch, setShowProductSearch] = useState(true)
-  const productSearchInputRef = useState<HTMLInputElement | null>(null)[0]
   
   useEffect(() => {
     setCustomers(initialCustomers)
