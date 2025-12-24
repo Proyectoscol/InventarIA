@@ -188,10 +188,36 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
 
   const handleProductEdit = (index: number) => {
     const item = productItems[index]
-    // Buscar el producto completo
+    // Buscar el producto completo con stock incluido
     fetch(`/api/products/${item.productId}`)
       .then(res => res.json())
       .then(productData => {
+        // Verificar que el producto tenga la estructura correcta
+        if (!productData || !productData.id) {
+          throw new Error("Producto no encontrado")
+        }
+        
+        // Asegurar que el stock tenga la estructura correcta
+        if (!productData.stock || !Array.isArray(productData.stock)) {
+          productData.stock = []
+        }
+        
+        // Verificar que el stock tenga el warehouse correcto
+        const hasStockForWarehouse = productData.stock.some(
+          (s: any) => s.warehouse && s.warehouse.id === item.warehouseId
+        )
+        
+        if (!hasStockForWarehouse && productData.stock.length > 0) {
+          // Si no hay stock para esta bodega, agregar un registro vacío para evitar errores
+          productData.stock.push({
+            warehouse: {
+              id: item.warehouseId,
+              name: item.warehouseName
+            },
+            quantity: 0
+          })
+        }
+        
         setSelectedProduct(productData)
         setSelectedWarehouseId(item.warehouseId)
         setShowProductCard(true)
@@ -200,7 +226,9 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
       })
       .catch(error => {
         console.error("Error cargando producto:", error)
-        toast.error("Error al cargar el producto para editar")
+        toast.error("Error al cargar el producto para editar", {
+          description: error.message || "Por favor, intenta nuevamente"
+        })
       })
   }
 
@@ -375,7 +403,11 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
           product={selectedProduct}
           warehouseId={selectedWarehouseId}
           warehouseName={warehouses.find(w => w.id === selectedWarehouseId)?.name || ""}
-          stockQuantity={selectedProduct.stock.find((s: any) => s.warehouse.id === selectedWarehouseId)?.quantity || 0}
+          stockQuantity={
+            selectedProduct.stock && Array.isArray(selectedProduct.stock)
+              ? selectedProduct.stock.find((s: any) => s.warehouse && s.warehouse.id === selectedWarehouseId)?.quantity || 0
+              : 0
+          }
           onSave={handleProductSave}
           onCancel={handleProductCardCancel}
           onRemove={handleProductCardCancel}
