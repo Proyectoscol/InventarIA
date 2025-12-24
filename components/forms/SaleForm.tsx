@@ -18,7 +18,7 @@ import { QuickProductCreationModal } from "@/components/modals/QuickProductCreat
 import { CurrencyInput } from "@/components/shared/CurrencyInput"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Package, X, ShoppingCart } from "lucide-react"
+import { Package, X, ShoppingCart, Edit } from "lucide-react"
 
 const saleSchema = z.object({
   customerId: z.string().min(1, "Cliente es obligatorio"),
@@ -229,9 +229,10 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         })
       }
 
-      // Crear un movimiento por cada producto
-      const movements = await Promise.all(
-        productItems.map(async (item, index) => {
+      // Crear un movimiento por cada producto (secuencialmente para evitar conflictos de número de movimiento)
+      const movements = []
+      for (let index = 0; index < productItems.length; index++) {
+        const item = productItems[index]
           const payload = {
             companyId,
             customerId: data.customerId,
@@ -249,20 +250,20 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
             notes: index === 0 ? data.notes : undefined // Solo el primer producto tiene notas
           }
 
-          const res = await fetch("/api/movements/sale", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          })
-
-          if (!res.ok) {
-            const error = await res.json()
-            throw new Error(error.error || `Error al registrar venta de ${item.productName}`)
-          }
-
-          return res.json()
+        const res = await fetch("/api/movements/sale", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
         })
-      )
+
+        if (!res.ok) {
+          const error = await res.json()
+          throw new Error(error.error || `Error al registrar venta de ${item.productName}`)
+        }
+
+        const result = await res.json()
+        movements.push(result)
+      }
 
       toast.success("✅ Venta registrada exitosamente", {
         description: `${productItems.length} producto(s) vendido(s)`,
@@ -346,6 +347,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
             setShowQuickProductCreation(true)
           }}
           placeholder="Buscar por producto o bodega..."
+          excludedProductIds={productItems.map(item => `${item.productId}-${item.warehouseId}`)}
         />
       </div>
 
@@ -384,15 +386,28 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
                       {item.warehouseName} • {item.quantity} x ${item.unitPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} = ${(item.unitPrice * item.quantity).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} COP
                     </div>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleProductRemove(index)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleProductEdit(index)}
+                      className="text-blue-600 hover:text-blue-700"
+                      title="Editar producto"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleProductRemove(index)}
+                      className="text-red-600 hover:text-red-700"
+                      title="Eliminar producto"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

@@ -24,6 +24,7 @@ interface ProductSearchWithWarehouseProps {
   onCreateNew?: (name: string) => void
   placeholder?: string
   disabled?: boolean
+  excludedProductIds?: string[] // Array de "productId-warehouseId" para excluir
 }
 
 export function ProductSearchWithWarehouse({ 
@@ -31,7 +32,8 @@ export function ProductSearchWithWarehouse({
   onSelect, 
   onCreateNew, 
   placeholder = "Buscar por producto o bodega...",
-  disabled = false
+  disabled = false,
+  excludedProductIds = []
 }: ProductSearchWithWarehouseProps) {
   const [search, setSearch] = useState("")
   const [allProducts, setAllProducts] = useState<ProductWithWarehouse[]>([])
@@ -155,9 +157,17 @@ export function ProductSearchWithWarehouse({
               {filteredProducts.map((product) => {
                 // Si el producto tiene stock en múltiples bodegas, mostrar cada una
                 if (product.stock.length > 0) {
-                  return product.stock.map((stockItem) => (
+                  return product.stock.map((stockItem) => {
+                    const productKey = `${product.id}-${stockItem.warehouse.id}`
+                    const isExcluded = excludedProductIds.includes(productKey)
+                    
+                    if (isExcluded) {
+                      return null // No mostrar productos ya agregados
+                    }
+                    
+                    return (
                     <button
-                      key={`${product.id}-${stockItem.warehouse.id}`}
+                      key={productKey}
                       type="button"
                       className="w-full text-left px-4 py-2 hover:bg-accent hover:text-accent-foreground transition-colors border-b last:border-b-0"
                       onClick={() => handleSelect(product, stockItem.warehouse.id)}
@@ -172,7 +182,8 @@ export function ProductSearchWithWarehouse({
                         </div>
                       </div>
                     </button>
-                  ))
+                    )
+                  }).filter(Boolean) // Filtrar nulls
                 } else {
                   // Producto sin stock en ninguna bodega
                   return (
