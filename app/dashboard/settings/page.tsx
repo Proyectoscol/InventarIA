@@ -14,6 +14,9 @@ import {
   Trash2,
   DollarSign,
   LogOut,
+  Bot,
+  CheckCircle,
+  XCircle,
   Settings as SettingsIcon
 } from "lucide-react"
 import { signOut } from "next-auth/react"
@@ -21,12 +24,53 @@ import { signOut } from "next-auth/react"
 export default function SettingsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const [openaiStatus, setOpenaiStatus] = useState<{
+    configured: boolean
+    lastChars: string | null
+  } | null>(null)
+  const [companies, setCompanies] = useState<any[]>([])
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login")
     }
   }, [status, router])
+
+  useEffect(() => {
+    if (session) {
+      fetchCompanies()
+    }
+  }, [session])
+
+  useEffect(() => {
+    if (companies.length > 0) {
+      fetchOpenAIStatus(companies[0].id)
+    }
+  }, [companies])
+
+  const fetchCompanies = async () => {
+    try {
+      const res = await fetch("/api/companies")
+      if (res.ok) {
+        const data = await res.json()
+        setCompanies(data)
+      }
+    } catch (error) {
+      console.error("Error cargando compañías:", error)
+    }
+  }
+
+  const fetchOpenAIStatus = async (companyId: string) => {
+    try {
+      const res = await fetch(`/api/companies/${companyId}/api-config`)
+      if (res.ok) {
+        const data = await res.json()
+        setOpenaiStatus(data)
+      }
+    } catch (error) {
+      console.error("Error cargando estado de OpenAI:", error)
+    }
+  }
 
   if (status === "loading") {
     return <div className="p-8">Cargando...</div>
@@ -71,6 +115,13 @@ export default function SettingsPage() {
       href: "/dashboard/credits",
       icon: DollarSign,
       color: "text-yellow-600"
+    },
+    {
+      title: "OpenAI",
+      description: "Configura tu API Key de OpenAI para IA",
+      href: "/dashboard/settings/openai",
+      icon: Bot,
+      color: "text-purple-600"
     }
   ]
 
@@ -91,6 +142,8 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {settingsOptions.map((option) => {
             const Icon = option.icon
+            const isOpenAI = option.href === "/dashboard/settings/openai"
+            
             return (
               <Link 
                 key={option.href} 
@@ -104,13 +157,29 @@ export default function SettingsPage() {
               >
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                   <CardHeader>
-                    <div className="flex items-center space-x-3">
-                      <Icon className={`h-6 w-6 ${option.color}`} />
-                      <div>
-                        <CardTitle>{option.title}</CardTitle>
-                        <CardDescription className="mt-1">
-                          {option.description}
-                        </CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3 flex-1">
+                        <Icon className={`h-6 w-6 ${option.color}`} />
+                        <div className="flex-1">
+                          <CardTitle className="flex items-center gap-2">
+                            {option.title}
+                            {isOpenAI && openaiStatus && (
+                              openaiStatus.configured ? (
+                                <CheckCircle className="h-4 w-4 text-green-600" title="Configurado" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-gray-400" title="No configurado" />
+                              )
+                            )}
+                          </CardTitle>
+                          <CardDescription className="mt-1">
+                            {option.description}
+                          </CardDescription>
+                          {isOpenAI && openaiStatus?.configured && openaiStatus.lastChars && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Últimos 10 caracteres: <code className="bg-gray-100 px-1 py-0.5 rounded">...{openaiStatus.lastChars}</code>
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </CardHeader>
