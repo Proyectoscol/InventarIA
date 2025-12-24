@@ -116,9 +116,17 @@ export default function CustomersPage() {
             </p>
           </div>
           {selectedCompanyId && (
-            <Button onClick={() => setShowCreateCustomer(true)}>
-              + Crear Cliente
-            </Button>
+            <div className="flex gap-2">
+              <Link href="/dashboard/credits">
+                <Button variant="outline" className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Créditos
+                </Button>
+              </Link>
+              <Button onClick={() => setShowCreateCustomer(true)}>
+                + Crear Cliente
+              </Button>
+            </div>
           )}
         </div>
 
