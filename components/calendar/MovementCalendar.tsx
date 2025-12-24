@@ -79,31 +79,32 @@ export function MovementCalendar({ companyId, onDateSelect }: MovementCalendarPr
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5" />
-            Calendario de Movimientos
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={prevMonth}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="font-semibold min-w-[150px] text-center">
-              {monthNames[month]} {year}
-            </span>
-            <Button variant="outline" size="sm" onClick={nextMonth}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+    <div className="w-full overflow-x-auto">
+      <Card className="min-w-0">
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+              Calendario de Movimientos
+            </CardTitle>
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+              <Button variant="outline" size="sm" onClick={prevMonth} className="h-8 w-8 p-0">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="font-semibold text-sm sm:text-base min-w-[120px] sm:min-w-[150px] text-center">
+                {monthNames[month]} {year}
+              </span>
+              <Button variant="outline" size="sm" onClick={nextMonth} className="h-8 w-8 p-0">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-7 gap-1">
+        </CardHeader>
+        <CardContent className="p-2 sm:p-6">
+          <div className="grid grid-cols-7 gap-1 min-w-[280px]">
           {/* Días de la semana */}
           {dayNames.map(day => (
-            <div key={day} className="text-center text-sm font-semibold p-2 text-muted-foreground">
+            <div key={day} className="text-center text-xs sm:text-sm font-semibold p-1 sm:p-2 text-muted-foreground">
               {day}
             </div>
           ))}
@@ -124,18 +125,19 @@ export function MovementCalendar({ companyId, onDateSelect }: MovementCalendarPr
                 key={day}
                 onClick={() => handleDateClick(day)}
                 className={`
-                  aspect-square p-2 rounded-md border transition-colors
+                  aspect-square p-1 sm:p-2 rounded-md border transition-colors
                   hover:bg-accent hover:text-accent-foreground
                   ${hasActivity ? "bg-blue-50 border-blue-200" : "border-gray-200"}
                   ${todayClass}
                   flex flex-col items-center justify-center relative
+                  min-w-[32px] sm:min-w-[40px]
                 `}
               >
-                <span className={`text-sm ${isToday(day) ? "font-bold text-primary" : ""}`}>
+                <span className={`text-xs sm:text-sm ${isToday(day) ? "font-bold text-primary" : ""}`}>
                   {day}
                 </span>
                 {hasActivity && (
-                  <span className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-blue-500 rounded-full" />
+                  <span className="absolute bottom-0.5 sm:bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 sm:w-1.5 sm:h-1.5 bg-blue-500 rounded-full" />
                 )}
               </button>
             )
@@ -143,6 +145,7 @@ export function MovementCalendar({ companyId, onDateSelect }: MovementCalendarPr
         </div>
       </CardContent>
     </Card>
+    </div>
   )
 }
 
