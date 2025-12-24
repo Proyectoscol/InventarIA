@@ -63,6 +63,7 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
   const priceType = watch("priceType")
   const quantity = watch("quantity")
   const price = watch("price")
+  const warehouseId = watch("warehouseId")
 
   const unitPrice = priceType === "unit" 
     ? price 
@@ -121,7 +122,11 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div>
         <Label>Bodega *</Label>
-        <Select {...register("warehouseId")} required>
+        <Select 
+          value={warehouseId || ""}
+          onChange={(e) => setValue("warehouseId", e.target.value, { shouldValidate: true })}
+          required
+        >
           <option value="">Seleccionar...</option>
           {warehouses.map((w) => (
             <option key={w.id} value={w.id}>{w.name}</option>
