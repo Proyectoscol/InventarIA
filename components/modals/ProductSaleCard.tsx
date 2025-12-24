@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { CurrencyInput } from "@/components/shared/CurrencyInput"
-import { X, Package, Warehouse } from "lucide-react"
+import { X, Package, Warehouse, Plus } from "lucide-react"
 import { toast } from "sonner"
+import { QuickAddStockModal } from "./QuickAddStockModal"
 
 interface ProductSaleItem {
   productId: string
@@ -36,9 +37,11 @@ interface ProductSaleCardProps {
   warehouseId: string
   warehouseName: string
   stockQuantity: number
+  companyId: string
   onSave: (item: ProductSaleItem) => void
   onCancel: () => void
   onRemove: () => void
+  onStockAdded?: () => void
 }
 
 export function ProductSaleCard({
@@ -46,10 +49,13 @@ export function ProductSaleCard({
   warehouseId,
   warehouseName,
   stockQuantity,
+  companyId,
   onSave,
   onCancel,
-  onRemove
+  onRemove,
+  onStockAdded
 }: ProductSaleCardProps) {
+  const [showAddStock, setShowAddStock] = useState(false)
   const [quantity, setQuantity] = useState<number>(1)
   const [unitPrice, setUnitPrice] = useState<number>(0)
   const [totalPriceInput, setTotalPriceInput] = useState<string>("")
@@ -143,6 +149,20 @@ export function ProductSaleCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Botón de Añadir Inventario */}
+        <div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAddStock(true)}
+            className="w-full"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Añadir más inventario
+          </Button>
+        </div>
+
         {/* Cantidad */}
         <div>
           <Label>Cantidad *</Label>
@@ -241,6 +261,34 @@ export function ProductSaleCard({
           </Button>
         </div>
       </CardContent>
+
+      {/* Modal de Añadir Inventario */}
+      {showAddStock && (
+        <QuickAddStockModal
+          companyId={companyId}
+          productId={product.id}
+          productName={product.name}
+          warehouseId={warehouseId}
+          warehouseName={warehouseName}
+          onSuccess={async () => {
+            setShowAddStock(false)
+            // Recargar el producto para actualizar el stock
+            try {
+              const res = await fetch(`/api/products/${product.id}`)
+              if (res.ok) {
+                const updatedProduct = await res.json()
+                // Actualizar el stock en el producto
+                product.stock = updatedProduct.stock || []
+                // Notificar al padre para que actualice
+                onStockAdded?.()
+              }
+            } catch (error) {
+              console.error("Error recargando producto:", error)
+            }
+          }}
+          onCancel={() => setShowAddStock(false)}
+        />
+      )}
     </Card>
   )
 }

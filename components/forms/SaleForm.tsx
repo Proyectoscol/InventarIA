@@ -85,6 +85,8 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
   const [creditDaysType, setCreditDaysType] = useState<"preset" | "custom">("preset")
   const [customCreditDays, setCustomCreditDays] = useState<string>("")
   const [forceUpdate, setForceUpdate] = useState(0)
+  const [showProductSearch, setShowProductSearch] = useState(true)
+  const productSearchInputRef = useState<HTMLInputElement | null>(null)[0]
   
   useEffect(() => {
     setCustomers(initialCustomers)
@@ -155,6 +157,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
     setSelectedProduct(product)
     setSelectedWarehouseId(warehouseId)
     setShowProductCard(true)
+    setShowProductSearch(false)
   }
 
   const handleProductSave = (item: ProductSaleItem) => {
@@ -175,6 +178,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
     setShowProductCard(false)
     setSelectedProduct(null)
     setSelectedWarehouseId("")
+    setShowProductSearch(false) // Ocultar búsqueda después de agregar
     toast.success("Producto agregado", {
       description: `${item.productName} agregado a la venta`,
       duration: 2000
@@ -236,6 +240,33 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
     setShowProductCard(false)
     setSelectedProduct(null)
     setSelectedWarehouseId("")
+    setShowProductSearch(true) // Mostrar búsqueda al cancelar
+  }
+
+  const handleAddAnotherProduct = () => {
+    setShowProductSearch(true)
+    // Enfocar el input después de un pequeño delay para que se renderice
+    setTimeout(() => {
+      const input = document.querySelector('input[placeholder="Buscar por producto o bodega..."]') as HTMLInputElement
+      if (input) {
+        input.focus()
+      }
+    }, 100)
+  }
+
+  const handleStockAdded = async () => {
+    // Recargar el producto para actualizar el stock
+    if (selectedProduct && selectedWarehouseId) {
+      try {
+        const res = await fetch(`/api/products/${selectedProduct.id}`)
+        if (res.ok) {
+          const updatedProduct = await res.json()
+          setSelectedProduct(updatedProduct)
+        }
+      } catch (error) {
+        console.error("Error recargando producto:", error)
+      }
+    }
   }
 
   const onSubmit = async (data: SaleFormData) => {
@@ -369,33 +400,35 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         )}
       </div>
 
-      {/* Selección de Productos */}
-      <div>
-        <div className="flex justify-between items-center mb-2">
-          <Label>Agregar Producto</Label>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setQuickProductName("")
+      {/* Selección de Productos - Solo mostrar si no hay producto en edición */}
+      {showProductSearch && !showProductCard && (
+        <div>
+          <div className="flex justify-between items-center mb-2">
+            <Label>Agregar Producto</Label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setQuickProductName("")
+                setShowQuickProductCreation(true)
+              }}
+            >
+              + Crear Producto
+            </Button>
+          </div>
+          <ProductSearchWithWarehouse
+            companyId={companyId}
+            onSelect={handleProductSelect}
+            onCreateNew={(name) => {
+              setQuickProductName(name)
               setShowQuickProductCreation(true)
             }}
-          >
-            + Crear Producto
-          </Button>
+            placeholder="Buscar por producto o bodega..."
+            excludedProductIds={productItems.map(item => `${item.productId}-${item.warehouseId}`)}
+          />
         </div>
-        <ProductSearchWithWarehouse
-          companyId={companyId}
-          onSelect={handleProductSelect}
-          onCreateNew={(name) => {
-            setQuickProductName(name)
-            setShowQuickProductCreation(true)
-          }}
-          placeholder="Buscar por producto o bodega..."
-          excludedProductIds={productItems.map(item => `${item.productId}-${item.warehouseId}`)}
-        />
-      </div>
+      )}
 
       {/* Tarjeta de Configuración de Producto */}
       {showProductCard && selectedProduct && selectedWarehouseId && (
@@ -403,6 +436,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
           product={selectedProduct}
           warehouseId={selectedWarehouseId}
           warehouseName={warehouses.find(w => w.id === selectedWarehouseId)?.name || ""}
+          companyId={companyId}
           stockQuantity={
             selectedProduct.stock && Array.isArray(selectedProduct.stock)
               ? selectedProduct.stock.find((s: any) => s.warehouse && s.warehouse.id === selectedWarehouseId)?.quantity || 0
@@ -411,6 +445,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
           onSave={handleProductSave}
           onCancel={handleProductCardCancel}
           onRemove={handleProductCardCancel}
+          onStockAdded={handleStockAdded}
         />
       )}
 
@@ -460,6 +495,18 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
                   </div>
                 </div>
               ))}
+            </div>
+            {/* Botón para añadir otro producto */}
+            <div className="mt-4 pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAddAnotherProduct}
+                className="w-full"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Añadir otro producto
+              </Button>
             </div>
             <div className="mt-4 pt-4 border-t">
               <div className="flex justify-between items-center text-lg font-bold">
