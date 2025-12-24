@@ -20,6 +20,20 @@ export default function CreditsPage() {
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "overdue" | "paid">("all")
 
+  // Determinar la ruta de retorno basada en el referrer o usar /dashboard/settings por defecto
+  const getBackHref = () => {
+    // Si hay un referrer en sessionStorage, usarlo
+    if (typeof window !== "undefined") {
+      const referrer = sessionStorage.getItem("creditsReferrer")
+      if (referrer) {
+        sessionStorage.removeItem("creditsReferrer")
+        return referrer
+      }
+    }
+    // Por defecto, volver a configuración ya que es donde está el acceso principal
+    return "/dashboard/settings"
+  }
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login")
