@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
       .reduce((sum, m) => {
         // Los créditos pagados ya están incluidos en el cashAmount del movimiento
         // Solo sumar si es un crédito puro que no tenía contado inicialmente
-        if (m.paymentType === "credit" && (!m.cashAmount || m.cashAmount === 0)) {
+        if (m.paymentType === "credit" && (!m.cashAmount || Number(m.cashAmount) === 0)) {
           return sum + Number(m.totalAmount)
         }
         return sum
