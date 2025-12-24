@@ -99,6 +99,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
   const unitPrice = watch("unitPrice")
   const productId = watch("productId")
   const warehouseId = watch("warehouseId")
+  const customerId = watch("customerId")
   const creditDays = watch("creditDays")
 
   const total = (quantity || 0) * (unitPrice || 0)
@@ -434,7 +435,10 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
             + Crear Cliente
           </Button>
         </div>
-        <Select {...register("customerId")}>
+        <Select 
+          value={customerId || ""}
+          onChange={(e) => setValue("customerId", e.target.value, { shouldValidate: true })}
+        >
           <option value="">Ninguno</option>
           {customers.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
@@ -738,11 +742,24 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
               companyId={companyId}
               onSuccess={(newCustomer) => {
                 if (newCustomer) {
+                  // Agregar el nuevo cliente a la lista
                   const updatedCustomers = [...customers, newCustomer]
                   setCustomers(updatedCustomers)
-                  setValue("customerId", newCustomer.id)
+                  
+                  // Seleccionar automáticamente el cliente recién creado
+                  setValue("customerId", newCustomer.id, { shouldValidate: true })
+                  
+                  // Notificar al componente padre si es necesario
                   onCustomerCreated?.(newCustomer)
+                  
+                  // Cerrar el modal
                   setShowCreateCustomer(false)
+                  
+                  // Mostrar confirmación
+                  toast.success("✅ Cliente creado y seleccionado", {
+                    description: `"${newCustomer.name}" está ahora seleccionado`,
+                    duration: 3000
+                  })
                 }
               }}
               onCancel={() => setShowCreateCustomer(false)}
