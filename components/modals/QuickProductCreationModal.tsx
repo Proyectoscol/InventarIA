@@ -368,7 +368,7 @@ export function QuickProductCreationModal({
               </div>
 
               <div>
-                <Label className="mb-2 block text-base">Tipo de Precio</Label>
+                <Label className="mb-2 block text-base">Tipo de Costo</Label>
                 <div className="grid grid-cols-2 gap-3">
                   <Button
                     type="button"
@@ -378,7 +378,7 @@ export function QuickProductCreationModal({
                     }`}
                     onClick={() => purchaseForm.setValue("priceType", "unit", { shouldValidate: true })}
                   >
-                    Precio Unitario
+                    Costo Unitario
                   </Button>
                   <Button
                     type="button"
@@ -388,14 +388,14 @@ export function QuickProductCreationModal({
                     }`}
                     onClick={() => purchaseForm.setValue("priceType", "total", { shouldValidate: true })}
                   >
-                    Precio Total
+                    Costo Total
                   </Button>
                 </div>
               </div>
 
               <div>
                 <Label className="text-base">
-                  {priceType === "unit" ? "Precio Unitario (COP) *" : "Precio Total (COP) *"}
+                  {priceType === "unit" ? "Costo Unitario (COP) *" : "Costo Total (COP) *"}
                 </Label>
                 <CurrencyInput
                   value={price || 0}

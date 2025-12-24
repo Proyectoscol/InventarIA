@@ -177,7 +177,7 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
       </div>
 
       <div>
-        <Label className="mb-2 block">Tipo de Precio</Label>
+        <Label className="mb-2 block">Tipo de Costo</Label>
         <div className="grid grid-cols-2 gap-3">
           <Button
             type="button"
@@ -187,7 +187,7 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
             }`}
             onClick={() => setValue("priceType", "unit", { shouldValidate: true })}
           >
-            Precio Unitario
+            Costo Unitario
           </Button>
           <Button
             type="button"
@@ -197,14 +197,14 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
             }`}
             onClick={() => setValue("priceType", "total", { shouldValidate: true })}
           >
-            Precio Total
+            Costo Total
           </Button>
         </div>
       </div>
 
       <div>
         <Label>
-          {priceType === "unit" ? "Precio Unitario (COP) *" : "Precio Total (COP) *"}
+          {priceType === "unit" ? "Costo Unitario (COP) *" : "Costo Total (COP) *"}
         </Label>
         <CurrencyInput
           value={price || 0}
