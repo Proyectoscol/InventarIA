@@ -305,10 +305,7 @@ export function ProductSaleCard({
           }}
           onCancel={() => {
             setShowAddStock(false)
-            // Si se canceló desde el aviso de stock, volver a mostrar la advertencia
-            if (quantity > stockQuantity) {
-              setShowStockWarning(true)
-            }
+            // Si se canceló, simplemente cerrar el modal y volver a la tarjeta
           }}
         />
       )}
