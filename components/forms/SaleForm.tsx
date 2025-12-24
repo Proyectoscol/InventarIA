@@ -177,7 +177,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
     setShowProductCard(false)
     setSelectedProduct(null)
     setSelectedWarehouseId("")
-    setShowProductSearch(false) // Ocultar búsqueda después de agregar
+    setShowProductSearch(true) // Mantener búsqueda visible
     toast.success("Producto agregado", {
       description: `${item.productName} agregado a la venta`,
       duration: 2000
@@ -187,6 +187,10 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
   const handleProductRemove = (index: number) => {
     const newItems = productItems.filter((_, i) => i !== index)
     setProductItems(newItems)
+    // Si no quedan productos, mostrar la búsqueda
+    if (newItems.length === 0) {
+      setShowProductSearch(true)
+    }
   }
 
   const handleProductEdit = (index: number) => {
@@ -241,6 +245,8 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
     setSelectedWarehouseId("")
     setShowProductSearch(true) // Mostrar búsqueda al cancelar
   }
+
+  const [isEditingCustomer, setIsEditingCustomer] = useState(false)
 
   const handleAddAnotherProduct = () => {
     setShowProductSearch(true)
@@ -363,7 +369,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
     <>
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Cliente (Obligatorio) */}
-      <div>
+      <div className={customerId && !isEditingCustomer ? "opacity-60 transition-opacity" : "opacity-100 transition-opacity"}>
         <div className="flex justify-between items-center mb-2">
           <Label>Cliente *</Label>
           <Button
@@ -382,6 +388,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
           companyId={companyId}
           onSelect={(customer) => {
             setValue("customerId", customer.id, { shouldValidate: true })
+            setIsEditingCustomer(false)
           }}
           onCreateNew={(name) => {
             // Guardar el nombre para pre-llenar el formulario
@@ -389,6 +396,15 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
             setShowCreateCustomer(true)
           }}
           placeholder="Buscar cliente..."
+          onFocus={() => setIsEditingCustomer(true)}
+          onBlur={() => {
+            // Pequeño delay para permitir que el onSelect se ejecute primero
+            setTimeout(() => {
+              if (customerId) {
+                setIsEditingCustomer(false)
+              }
+            }, 100)
+          }}
         />
         <input
           type="hidden"
@@ -399,23 +415,26 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         )}
       </div>
 
-      {/* Selección de Productos - Solo mostrar si no hay producto en edición */}
-      {showProductSearch && !showProductCard && (
-        <div>
-          <div className="flex justify-between items-center mb-2">
-            <Label>Agregar Producto</Label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setQuickProductName("")
-                setShowQuickProductCreation(true)
-              }}
-            >
-              + Crear Producto
-            </Button>
-          </div>
+      {/* Separador visual */}
+      <div className="border-t my-6"></div>
+
+      {/* Selección de Productos - Siempre visible */}
+      <div>
+        <div className="flex justify-between items-center mb-2">
+          <Label>Agregar Producto</Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setQuickProductName("")
+              setShowQuickProductCreation(true)
+            }}
+          >
+            + Crear Producto
+          </Button>
+        </div>
+        {showProductSearch && (
           <ProductSearchWithWarehouse
             companyId={companyId}
             onSelect={handleProductSelect}
@@ -426,8 +445,8 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
             placeholder="Buscar por producto o bodega..."
             excludedProductIds={productItems.map(item => `${item.productId}-${item.warehouseId}`)}
           />
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Tarjeta de Configuración de Producto */}
       {showProductCard && selectedProduct && selectedWarehouseId && (

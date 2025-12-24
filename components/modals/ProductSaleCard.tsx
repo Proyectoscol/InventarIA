@@ -175,7 +175,14 @@ export function ProductSaleCard({
       <CardContent className="space-y-4">
         {/* Cantidad */}
         <div>
-          <Label>Cantidad *</Label>
+          <div className="flex items-center justify-between mb-1">
+            <Label>Cantidad *</Label>
+            {quantity > stockQuantity && (
+              <span className="text-xs text-red-600 font-medium">
+                ⚠️ Stock disponible: {stockQuantity}
+              </span>
+            )}
+          </div>
           <Input
             type="number"
             inputMode="numeric"
@@ -275,6 +282,7 @@ export function ProductSaleCard({
           title="Stock Insuficiente"
           description={`Vas a agregar más, vas a vender más productos de los que tienes en stock. Deseas aumentar tu stock para así poder vender más productos?`}
           type="warning"
+          confirmText="Sí, deseo agregar más stock"
         />
       )}
 

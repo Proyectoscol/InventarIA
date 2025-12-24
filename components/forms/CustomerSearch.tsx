@@ -18,6 +18,8 @@ interface CustomerSearchProps {
   placeholder?: string
   disabled?: boolean
   preselectedCustomerId?: string
+  onFocus?: () => void
+  onBlur?: () => void
 }
 
 export function CustomerSearch({ 
@@ -26,7 +28,9 @@ export function CustomerSearch({
   onCreateNew, 
   placeholder = "Buscar cliente...",
   disabled = false,
-  preselectedCustomerId
+  preselectedCustomerId,
+  onFocus,
+  onBlur
 }: CustomerSearchProps) {
   const [search, setSearch] = useState("")
   const [allCustomers, setAllCustomers] = useState<Customer[]>([])
@@ -130,6 +134,14 @@ export function CustomerSearch({
 
   const handleInputFocus = () => {
     setShowResults(true)
+    onFocus?.()
+  }
+
+  const handleInputBlur = () => {
+    // Delay para permitir que el click en un item se procese primero
+    setTimeout(() => {
+      onBlur?.()
+    }, 200)
   }
 
   const handleClear = () => {
@@ -146,6 +158,7 @@ export function CustomerSearch({
           value={search}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
           disabled={disabled}
           className={selectedCustomer ? "bg-green-50 border-green-300 pr-10" : ""}
         />
