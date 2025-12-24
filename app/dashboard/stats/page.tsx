@@ -327,6 +327,11 @@ export default function StatsPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Botón de atrás al final */}
+        <div className="mt-8 flex justify-center">
+          <BackButton href="/dashboard" />
+        </div>
         </div>
 
         {/* Modal de detalles del día */}
@@ -337,12 +342,6 @@ export default function StatsPage() {
             onClose={() => setSelectedDate(null)}
           />
         )}
-
-        {/* Botón de atrás al final */}
-        <div className="mt-8 flex justify-center">
-          <BackButton href="/dashboard" />
-        </div>
-      </div>
     </div>
   )
 }
