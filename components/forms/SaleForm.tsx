@@ -186,6 +186,24 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
     setProductItems(newItems)
   }
 
+  const handleProductEdit = (index: number) => {
+    const item = productItems[index]
+    // Buscar el producto completo
+    fetch(`/api/products/${item.productId}`)
+      .then(res => res.json())
+      .then(productData => {
+        setSelectedProduct(productData)
+        setSelectedWarehouseId(item.warehouseId)
+        setShowProductCard(true)
+        // Remover el item actual para que se pueda re-agregar con los nuevos valores
+        setProductItems(prev => prev.filter((_, i) => i !== index))
+      })
+      .catch(error => {
+        console.error("Error cargando producto:", error)
+        toast.error("Error al cargar el producto para editar")
+      })
+  }
+
   const handleProductCardCancel = () => {
     setShowProductCard(false)
     setSelectedProduct(null)
