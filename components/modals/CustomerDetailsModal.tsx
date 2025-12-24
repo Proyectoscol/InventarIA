@@ -210,10 +210,10 @@ export function CustomerDetailsModal({ customer, companyId, onClose }: CustomerD
                         <p><span className="font-medium">Producto:</span> {movement.product?.name}</p>
                         <p><span className="font-medium">Bodega:</span> {movement.warehouse?.name}</p>
                         <p><span className="font-medium">Cantidad:</span> {movement.quantity} unidades</p>
-                        <p><span className="font-medium">Precio Unitario:</span> ${movement.unitPrice?.toLocaleString("es-CO")}</p>
-                        <p><span className="font-medium">Total:</span> ${movement.totalAmount?.toLocaleString("es-CO")}</p>
+                        <p><span className="font-medium">Precio Unitario:</span> ${(Number(movement.unitPrice) || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</p>
+                        <p><span className="font-medium">Total:</span> ${(Number(movement.totalAmount) || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</p>
                         {movement.profit !== null && (
-                          <p><span className="font-medium">Ganancia:</span> ${movement.profit?.toLocaleString("es-CO")}</p>
+                          <p><span className="font-medium">Ganancia:</span> ${(Number(movement.profit) || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</p>
                         )}
                         <p><span className="font-medium">Pago:</span> {
                           movement.paymentType === "cash" ? "Contado" :
@@ -225,12 +225,12 @@ export function CustomerDetailsModal({ customer, companyId, onClose }: CustomerD
                         )}
                         {movement.paymentType === "mixed" && (
                           <>
-                            <p><span className="font-medium">Contado:</span> ${movement.cashAmount?.toLocaleString("es-CO")}</p>
-                            <p><span className="font-medium">Crédito:</span> ${movement.creditAmount?.toLocaleString("es-CO")}</p>
+                            <p><span className="font-medium">Contado:</span> ${(Number(movement.cashAmount) || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</p>
+                            <p><span className="font-medium">Crédito:</span> ${(Number(movement.creditAmount) || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</p>
                           </>
                         )}
                         {movement.hasShipping && movement.shippingCost && (
-                          <p><span className="font-medium">Envío:</span> ${movement.shippingCost?.toLocaleString("es-CO")} 
+                          <p><span className="font-medium">Envío:</span> ${(Number(movement.shippingCost) || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} 
                             ({movement.shippingPaidBy === "customer" ? "Cliente" : "Vendedor"})
                           </p>
                         )}
