@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
 import { productSchema, purchaseSchema } from "@/lib/validations"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -52,9 +53,14 @@ export function QuickProductCreationModal({
   const [createdProductId, setCreatedProductId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  // Schema extendido para incluir warehouseId
+  const productFormSchema = productSchema.extend({
+    warehouseId: z.string().min(1, "Debes seleccionar una bodega")
+  })
+
   // Formulario de producto (Paso 1)
-  const productForm = useForm<ProductFormData>({
-    resolver: zodResolver(productSchema),
+  const productForm = useForm<ProductFormData & { warehouseId: string }>({
+    resolver: zodResolver(productFormSchema),
     defaultValues: {
       name: initialProductName,
       description: "",
@@ -79,7 +85,7 @@ export function QuickProductCreationModal({
   const unitPrice = priceType === "unit" ? price : (quantity > 0 ? price / quantity : 0)
 
   // Paso 1: Crear producto
-  const onProductSubmit = async (data: ProductFormData) => {
+  const onProductSubmit = async (data: ProductFormData & { warehouseId: string }) => {
     // Validar que el nombre esté lleno
     if (!data.name || data.name.trim().length === 0) {
       toast.error("❌ El nombre del producto es requerido")
@@ -87,8 +93,9 @@ export function QuickProductCreationModal({
     }
     
     // Validar que la bodega esté seleccionada
-    if (!data.warehouseId) {
+    if (!data.warehouseId || data.warehouseId.trim() === "") {
       toast.error("❌ Debes seleccionar una bodega")
+      productForm.setError("warehouseId", { message: "Debes seleccionar una bodega" })
       return
     }
 
