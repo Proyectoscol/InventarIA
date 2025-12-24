@@ -66,14 +66,14 @@ export async function POST(req: NextRequest) {
       })
     }
     
-    // Verificar si las alertas están habilitadas (opcional, para compatibilidad)
+    // Verificar si las alertas de créditos están habilitadas
     const alertConfig = await prisma.alertConfig.findUnique({
       where: { companyId }
     })
     
-    if (alertConfig && !alertConfig.enableAlerts) {
+    if (alertConfig && !alertConfig.enableCreditAlerts) {
       return NextResponse.json({
-        message: "Alertas deshabilitadas para esta compañía",
+        message: "Alertas de créditos deshabilitadas para esta compañía",
         credits: dueCredits.length,
         notified: false
       })

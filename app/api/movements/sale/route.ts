@@ -288,13 +288,13 @@ async function checkAndSendStockAlert({
     return
   }
   
-  // Verificar si las alertas están habilitadas (opcional, para compatibilidad)
+  // Verificar si las alertas de stock están habilitadas
   const alertConfig = await prisma.alertConfig.findUnique({
     where: { companyId }
   })
   
-  if (alertConfig && !alertConfig.enableAlerts) {
-    console.log(`ℹ️  Alertas deshabilitadas para la compañía ${companyId}`)
+  if (alertConfig && !alertConfig.enableStockAlerts) {
+    console.log(`ℹ️  Alertas de stock deshabilitadas para la compañía ${companyId}`)
     return
   }
   

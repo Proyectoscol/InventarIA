@@ -5,8 +5,10 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { BackButton } from "@/components/shared/BackButton"
-import { Bell, Mail, CheckCircle, XCircle, Loader2 } from "lucide-react"
+import { Bell, Package, DollarSign } from "lucide-react"
 import { toast } from "sonner"
 
 export default function AlertsPage() {
@@ -14,14 +16,12 @@ export default function AlertsPage() {
   const router = useRouter()
   const [companies, setCompanies] = useState<any[]>([])
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("")
-  const [userEmails, setUserEmails] = useState<string[]>([])
-  const [testing, setTesting] = useState(false)
-  const [testResult, setTestResult] = useState<{
-    success: boolean
-    email?: string
-    messageId?: string
-    error?: string
+  const [alertConfig, setAlertConfig] = useState<{
+    enableStockAlerts: boolean
+    enableCreditAlerts: boolean
   } | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -37,7 +37,7 @@ export default function AlertsPage() {
 
   useEffect(() => {
     if (selectedCompanyId) {
-      fetchUserEmails(selectedCompanyId)
+      fetchAlertConfig(selectedCompanyId)
     }
   }, [selectedCompanyId])
 
@@ -56,69 +56,59 @@ export default function AlertsPage() {
     }
   }
 
-  const fetchUserEmails = async (companyId: string) => {
+  const fetchAlertConfig = async (companyId: string) => {
     try {
-      const res = await fetch(`/api/companies/${companyId}/users/emails`)
+      setLoading(true)
+      const res = await fetch(`/api/companies/${companyId}/alerts`)
       if (res.ok) {
         const data = await res.json()
-        setUserEmails(data.emails || [])
+        setAlertConfig({
+          enableStockAlerts: data.enableStockAlerts !== false,
+          enableCreditAlerts: data.enableCreditAlerts !== false
+        })
       }
     } catch (error) {
-      console.error("Error cargando emails de usuarios:", error)
-      setUserEmails([])
+      console.error("Error cargando configuración de alertas:", error)
+      toast.error("Error al cargar configuración de alertas")
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleTestEmail = async (email: string) => {
-    setTesting(true)
-    setTestResult(null)
-    
+  const handleSave = async () => {
+    if (!selectedCompanyId || !alertConfig) return
+
+    setSaving(true)
     try {
-      const res = await fetch("/api/alerts/test", {
-        method: "POST",
+      const res = await fetch(`/api/companies/${selectedCompanyId}/alerts`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({
+          enableStockAlerts: alertConfig.enableStockAlerts,
+          enableCreditAlerts: alertConfig.enableCreditAlerts
+        })
       })
 
-      const data = await res.json()
-
-      if (res.ok && data.success) {
-        setTestResult({
-          success: true,
-          email: email,
-          messageId: data.messageId
-        })
-        toast.success("✅ Email de prueba enviado exitosamente", {
-          description: `El email se envió correctamente a ${email}`,
-          duration: 5000
+      if (res.ok) {
+        toast.success("✅ Configuración guardada exitosamente", {
+          description: "Los cambios en las alertas se han guardado correctamente",
+          duration: 3000
         })
       } else {
-        setTestResult({
-          success: false,
-          email: email,
-          error: data.error || "Error desconocido"
-        })
-        toast.error("❌ Error al enviar email de prueba", {
-          description: data.error || "Por favor, verifica la configuración",
-          duration: 5000
-        })
+        const error = await res.json()
+        throw new Error(error.error || "Error al guardar configuración")
       }
     } catch (error: any) {
-      setTestResult({
-        success: false,
-        email: email,
-        error: error.message || "Error de conexión"
-      })
-      toast.error("❌ Error al enviar email de prueba", {
+      toast.error("❌ Error al guardar configuración", {
         description: error.message || "Por favor, intenta nuevamente",
-        duration: 5000
+        duration: 4000
       })
     } finally {
-      setTesting(false)
+      setSaving(false)
     }
   }
 
-  if (status === "loading") {
+  if (status === "loading" || loading) {
     return <div className="p-8">Cargando...</div>
   }
 
@@ -136,7 +126,7 @@ export default function AlertsPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Configuración de Alertas</h1>
           <p className="text-muted-foreground">
-            Las alertas se envían automáticamente a los usuarios asociados a cada compañía
+            Activa o desactiva los tipos de alertas que deseas recibir
           </p>
         </div>
 
@@ -162,99 +152,78 @@ export default function AlertsPage() {
           </Card>
         )}
 
-        {/* Información de Alertas */}
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex items-center space-x-2">
-              <Bell className="h-5 w-5 text-orange-600" />
-              <CardTitle>Destinatarios de Alertas</CardTitle>
-            </div>
-            <CardDescription>
-              Los siguientes usuarios recibirán alertas de stock bajo y créditos vencidos
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {userEmails.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground mb-2">
-                  No hay usuarios con email asociados a esta compañía
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Las alertas se enviarán a los emails de los usuarios que estén asociados a la compañía
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {userEmails.map((email, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Mail className="h-5 w-5 text-gray-500" />
-                      <span className="font-medium">{email}</span>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleTestEmail(email)}
-                      disabled={testing}
-                    >
-                      {testing ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Enviando...
-                        </>
-                      ) : (
-                        <>
-                          <Mail className="h-4 w-4 mr-2" />
-                          Probar
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Resultado de Prueba */}
-        {testResult && (
-          <Card className={`mb-6 ${testResult.success ? "border-green-500" : "border-red-500"}`}>
+        {/* Configuración de Tipos de Alertas */}
+        {alertConfig && (
+          <Card className="mb-6">
             <CardHeader>
               <div className="flex items-center space-x-2">
-                {testResult.success ? (
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                ) : (
-                  <XCircle className="h-5 w-5 text-red-600" />
-                )}
-                <CardTitle>
-                  {testResult.success ? "Prueba Exitosa" : "Error en la Prueba"}
-                </CardTitle>
+                <Bell className="h-5 w-5 text-orange-600" />
+                <CardTitle>Tipos de Alertas</CardTitle>
               </div>
+              <CardDescription>
+                Activa o desactiva los tipos de alertas que deseas recibir
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <p>
-                  <strong>Email:</strong> {testResult.email}
-                </p>
-                {testResult.success ? (
-                  <>
-                    <p className="text-green-600">
-                      ✅ El email se envió correctamente
+            <CardContent className="space-y-6">
+              {/* Alertas de Stock Bajo */}
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center space-x-3 flex-1">
+                  <Package className="h-5 w-5 text-red-600" />
+                  <div className="flex-1">
+                    <Label htmlFor="stock-alerts" className="text-base font-semibold cursor-pointer">
+                      Alertas de Stock Bajo
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Recibe notificaciones cuando el stock de un producto está por debajo del umbral mínimo configurado
                     </p>
-                    {testResult.messageId && (
-                      <p className="text-sm text-muted-foreground">
-                        ID del mensaje: {testResult.messageId}
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-red-600">
-                    ❌ Error: {testResult.error}
-                  </p>
-                )}
+                  </div>
+                </div>
+                <Switch
+                  id="stock-alerts"
+                  checked={alertConfig.enableStockAlerts}
+                  onCheckedChange={(checked) => {
+                    setAlertConfig({
+                      ...alertConfig,
+                      enableStockAlerts: checked
+                    })
+                  }}
+                />
+              </div>
+
+              {/* Alertas de Créditos Vencidos */}
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex items-center space-x-3 flex-1">
+                  <DollarSign className="h-5 w-5 text-yellow-600" />
+                  <div className="flex-1">
+                    <Label htmlFor="credit-alerts" className="text-base font-semibold cursor-pointer">
+                      Alertas de Créditos Vencidos
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Recibe notificaciones cuando hay créditos que vencen hoy o están vencidos
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="credit-alerts"
+                  checked={alertConfig.enableCreditAlerts}
+                  onCheckedChange={(checked) => {
+                    setAlertConfig({
+                      ...alertConfig,
+                      enableCreditAlerts: checked
+                    })
+                  }}
+                />
+              </div>
+
+              {/* Botón de Guardar */}
+              <div className="pt-4 border-t">
+                <Button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="w-full sm:w-auto"
+                >
+                  {saving ? "Guardando..." : "Guardar Configuración"}
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -263,27 +232,13 @@ export default function AlertsPage() {
         {/* Información sobre Alertas */}
         <Card>
           <CardHeader>
-            <CardTitle>Tipos de Alertas</CardTitle>
+            <CardTitle>Información</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <h3 className="font-semibold mb-2">🔴 Alertas de Stock Bajo</h3>
-              <p className="text-sm text-muted-foreground">
-                Se envían automáticamente cuando el stock de un producto está por debajo del umbral mínimo configurado.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">⏰ Alertas de Créditos Vencidos</h3>
-              <p className="text-sm text-muted-foreground">
-                Se envían automáticamente cuando hay créditos que vencen hoy o están vencidos.
-              </p>
-            </div>
-            <div className="pt-4 border-t">
-              <p className="text-xs text-muted-foreground">
-                Las alertas se envían a todos los usuarios asociados a la compañía. 
-                Para agregar o quitar destinatarios, gestiona los usuarios de la compañía.
-              </p>
-            </div>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Las alertas se envían automáticamente a todos los usuarios asociados a la compañía. 
+              Para agregar o quitar destinatarios, gestiona los usuarios de la compañía.
+            </p>
           </CardContent>
         </Card>
 
@@ -295,4 +250,3 @@ export default function AlertsPage() {
     </div>
   )
 }
-

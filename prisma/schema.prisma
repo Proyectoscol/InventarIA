@@ -55,15 +55,17 @@ model UserCompany {
 
 // ============= CONFIGURACIÓN DE ALERTAS =============
 model AlertConfig {
-  id           String   @id @default(cuid())
-  companyId    String   @unique
-  alertEmails  String[] // Array de emails para recibir alertas
-  enableAlerts Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
+  id                String   @id @default(cuid())
+  companyId         String   @unique
+  alertEmails       String[] // Array de emails para recibir alertas (deprecated, ahora se usan emails de usuarios)
+  enableAlerts      Boolean  @default(true) // Deprecated, usar enableStockAlerts y enableCreditAlerts
+  enableStockAlerts Boolean  @default(true) // Activar/desactivar alertas de stock bajo
+  enableCreditAlerts Boolean @default(true) // Activar/desactivar alertas de créditos vencidos
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
   company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
+  
   @@map("alert_configs")
 }
 

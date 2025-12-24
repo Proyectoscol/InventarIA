@@ -34,9 +34,9 @@ export async function GET(req: NextRequest) {
         continue
       }
       
-      // Verificar si las alertas están habilitadas (opcional, para compatibilidad)
-      if (company.alertConfig && !company.alertConfig.enableAlerts) {
-        console.log(`ℹ️  Alertas deshabilitadas para la compañía ${company.name}`)
+      // Verificar si las alertas de créditos están habilitadas
+      if (company.alertConfig && !company.alertConfig.enableCreditAlerts) {
+        console.log(`ℹ️  Alertas de créditos deshabilitadas para la compañía ${company.name}`)
         continue
       }
 

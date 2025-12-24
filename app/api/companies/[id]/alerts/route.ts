@@ -23,7 +23,9 @@ export async function GET(
         data: {
           companyId: params.id,
           alertEmails: [],
-          enableAlerts: true
+          enableAlerts: true,
+          enableStockAlerts: true,
+          enableCreditAlerts: true
         }
       })
       return NextResponse.json(newConfig)
@@ -54,12 +56,16 @@ export async function PUT(
       where: { companyId: params.id },
       update: {
         alertEmails: data.alertEmails || [],
-        enableAlerts: data.enableAlerts !== false
+        enableAlerts: data.enableAlerts !== false,
+        enableStockAlerts: data.enableStockAlerts !== false,
+        enableCreditAlerts: data.enableCreditAlerts !== false
       },
       create: {
         companyId: params.id,
         alertEmails: data.alertEmails || [],
-        enableAlerts: data.enableAlerts !== false
+        enableAlerts: data.enableAlerts !== false,
+        enableStockAlerts: data.enableStockAlerts !== false,
+        enableCreditAlerts: data.enableCreditAlerts !== false
       }
     })
 
