@@ -213,7 +213,7 @@ export function PurchaseForm({ companyId, warehouses, preselectedProductId, pres
         />
         {priceType === "total" && quantity && (
           <p className="text-sm text-muted-foreground mt-1">
-            Precio unitario: ${unitPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} COP
+            Costo unitario: ${unitPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} COP
           </p>
         )}
         {errors.price && (

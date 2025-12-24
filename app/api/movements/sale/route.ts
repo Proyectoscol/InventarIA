@@ -220,31 +220,34 @@ export async function POST(req: NextRequest) {
       return movement
     })
     
-    // 7. VERIFICAR Y ENVIAR ALERTAS (fuera de transacción)
-    try {
-      // Alerta de stock bajo
-      await checkAndSendStockAlert({
+    // 7. VERIFICAR Y ENVIAR ALERTAS (fuera de transacción, no bloqueante)
+    // Ejecutar alertas de forma asíncrona sin bloquear la respuesta
+    Promise.all([
+      // Alerta de stock bajo (no bloqueante)
+      checkAndSendStockAlert({
         productId: data.productId,
         warehouseId: data.warehouseId,
         companyId: data.companyId
-      })
-    } catch (alertError) {
-      console.error("❌ Error enviando alerta de stock:", alertError)
-      // No fallar la venta si falla el email
-    }
-    
-    // Si hay crédito, verificar créditos vencidos después de un delay
-    const creditAmountNum = result.creditAmount ? Number(result.creditAmount) : 0
-    if (creditAmountNum > 0 && result.creditDueDate) {
-      setTimeout(async () => {
-        try {
-          await checkAndSendCreditAlert(data.companyId)
-        } catch (creditAlertError) {
-          console.error("❌ Error verificando créditos vencidos:", creditAlertError)
+      }).catch((alertError) => {
+        console.error("❌ Error enviando alerta de stock:", alertError)
+      }),
+      // Si hay crédito, verificar créditos vencidos después de un delay
+      (async () => {
+        const creditAmountNum = result.creditAmount ? Number(result.creditAmount) : 0
+        if (creditAmountNum > 0 && result.creditDueDate) {
+          await new Promise(resolve => setTimeout(resolve, 2000))
+          try {
+            await checkAndSendCreditAlert(data.companyId)
+          } catch (creditAlertError) {
+            console.error("❌ Error verificando créditos vencidos:", creditAlertError)
+          }
         }
-      }, 2000) // Esperar 2 segundos para que el movimiento esté guardado
-    }
+      })()
+    ]).catch(() => {
+      // Ignorar errores de alertas
+    })
     
+    // Retornar respuesta inmediatamente, sin esperar las alertas
     return NextResponse.json(result, { status: 201 })
   } catch (error: any) {
     console.error("Error en venta:", error)

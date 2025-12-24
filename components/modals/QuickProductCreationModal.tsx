@@ -404,7 +404,7 @@ export function QuickProductCreationModal({
                 />
                 {priceType === "total" && quantity && (
                   <p className="text-base text-muted-foreground mt-1">
-                    Precio unitario: ${unitPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} COP
+                    Costo unitario: ${unitPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} COP
                   </p>
                 )}
                 {purchaseForm.formState.errors.price && (
