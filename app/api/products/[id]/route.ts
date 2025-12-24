@@ -14,16 +14,18 @@ export async function GET(
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
-    const product = await prisma.product.findFirst({
-      where: { 
-        id: params.id,
-        deletedAt: null // Solo productos activos
-      },
+    const product = await prisma.product.findUnique({
+      where: { id: params.id },
       include: {
         stock: true,
         batches: {
           orderBy: { purchaseDate: "desc" },
           take: 1
+        },
+        _count: {
+          select: {
+            movements: true
+          }
         }
       }
     })

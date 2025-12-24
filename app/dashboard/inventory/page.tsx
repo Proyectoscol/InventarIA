@@ -12,6 +12,7 @@ import { ProductForm } from "@/components/forms/ProductForm"
 import { BackButton } from "@/components/shared/BackButton"
 import { EditProductModal } from "@/components/modals/EditProductModal"
 import { EditThresholdModal } from "@/components/modals/EditThresholdModal"
+import { ConfirmDialog } from "@/components/modals/ConfirmDialog"
 import { Edit, Package, Calendar, DollarSign, ShoppingCart, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -28,6 +29,9 @@ export default function InventoryPage() {
   const [productDetails, setProductDetails] = useState<Record<string, any>>({})
   const [editingProduct, setEditingProduct] = useState<any>(null)
   const [editingThreshold, setEditingThreshold] = useState<any>(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [productToDelete, setProductToDelete] = useState<any>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -78,10 +82,31 @@ export default function InventoryPage() {
         // Mostrar todos los productos de la compañía, no solo los que tienen stock
         // El stock se mostrará como 0 si no existe registro para esa bodega
         const filteredProducts = data
-        setProducts(filteredProducts)
+        
+        // Enriquecer con información de movimientos para el modal de confirmación
+        const enrichedProducts = await Promise.all(
+          filteredProducts.map(async (product: any) => {
+            try {
+              const productRes = await fetch(`/api/products/${product.id}`)
+              if (productRes.ok) {
+                const productData = await productRes.json()
+                return {
+                  ...product,
+                  _count: productData._count || { movements: 0 },
+                  movements: productData.movements || []
+                }
+              }
+              return product
+            } catch {
+              return product
+            }
+          })
+        )
+        
+        setProducts(enrichedProducts)
         
         // Cargar detalles de último pedido para cada producto
-        filteredProducts.forEach((product: any) => {
+        enrichedProducts.forEach((product: any) => {
           fetchProductDetails(product.id, warehouseId)
         })
       }
@@ -118,13 +143,17 @@ export default function InventoryPage() {
     router.push(`/dashboard/movements/purchase?productId=${product.id}&warehouseId=${selectedWarehouseId}`)
   }
 
-  const handleDeleteProduct = async (product: any) => {
-    if (!confirm(`¿Estás seguro de eliminar el producto "${product.name}"?\n\n${product.movements?.length > 0 ? "Este producto tiene movimientos históricos y será movido a la papelera." : "Este producto será eliminado completamente."}`)) {
-      return
-    }
+  const handleDeleteProduct = (product: any) => {
+    setProductToDelete(product)
+    setDeleteConfirmOpen(true)
+  }
 
+  const confirmDeleteProduct = async () => {
+    if (!productToDelete) return
+
+    setIsDeleting(true)
     try {
-      const res = await fetch(`/api/products/${product.id}`, {
+      const res = await fetch(`/api/products/${productToDelete.id}`, {
         method: "DELETE"
       })
 
@@ -142,6 +171,10 @@ export default function InventoryPage() {
         duration: 3000
       })
 
+      // Cerrar modal y limpiar estado
+      setDeleteConfirmOpen(false)
+      setProductToDelete(null)
+
       // Refrescar lista de productos
       if (companyId && selectedWarehouseId) {
         fetchProducts(companyId, selectedWarehouseId)
@@ -151,6 +184,8 @@ export default function InventoryPage() {
         description: error.message || "Por favor, intenta nuevamente",
         duration: 4000
       })
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -423,6 +458,29 @@ export default function InventoryPage() {
           }}
         />
       )}
+
+      {/* Modal de confirmación de eliminación */}
+      {productToDelete && (() => {
+        const hasMovements = productToDelete._count?.movements > 0 || productToDelete.movements?.length > 0
+        return (
+          <ConfirmDialog
+            open={deleteConfirmOpen}
+            onClose={() => {
+              setDeleteConfirmOpen(false)
+              setProductToDelete(null)
+            }}
+            onConfirm={confirmDeleteProduct}
+            title={`Eliminar Producto: ${productToDelete.name}`}
+            description={
+              hasMovements
+                ? `Este producto tiene ${productToDelete._count?.movements || productToDelete.movements?.length || 0} movimiento(s) histórico(s) (compras o ventas). Será movido a la papelera y podrás restaurarlo más tarde desde Configuración > Papelera. Los movimientos históricos se mantendrán intactos.`
+                : `Este producto no tiene movimientos históricos. Será eliminado completamente y no podrás restaurarlo. Esta acción no se puede deshacer.`
+            }
+            type={hasMovements ? "soft-delete" : "hard-delete"}
+            loading={isDeleting}
+          />
+        )
+      })()}
     </div>
   )
 }
