@@ -164,11 +164,13 @@ export default function SettingsPage() {
                           <CardTitle className="flex items-center gap-2">
                             {option.title}
                             {isOpenAI && openaiStatus && (
-                              openaiStatus.configured ? (
-                                <CheckCircle className="h-4 w-4 text-green-600" title="Configurado" />
-                              ) : (
-                                <XCircle className="h-4 w-4 text-gray-400" title="No configurado" />
-                              )
+                              <span title={openaiStatus.configured ? "Configurado" : "No configurado"}>
+                                {openaiStatus.configured ? (
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <XCircle className="h-4 w-4 text-gray-400" />
+                                )}
+                              </span>
                             )}
                           </CardTitle>
                           <CardDescription className="mt-1">
