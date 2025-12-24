@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { X, Edit, ShoppingCart, Package, ArrowUp, ArrowDown } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { EditMovementModal } from "@/components/modals/EditMovementModal"
 
 interface DayDetailsModalProps {
   date: Date
@@ -16,11 +16,25 @@ export function DayDetailsModal({ date, companyId, onClose }: DayDetailsModalPro
   const [movements, setMovements] = useState<any[]>([])
   const [summary, setSummary] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
+  const [editingMovement, setEditingMovement] = useState<any>(null)
+  const [warehouses, setWarehouses] = useState<Array<{ id: string; name: string }>>([])
 
   useEffect(() => {
     fetchDayMovements()
+    fetchWarehouses()
   }, [date, companyId])
+
+  const fetchWarehouses = async () => {
+    try {
+      const res = await fetch(`/api/companies/${companyId}/warehouses`)
+      if (res.ok) {
+        const data = await res.json()
+        setWarehouses(data)
+      }
+    } catch (error) {
+      console.error("Error cargando bodegas:", error)
+    }
+  }
 
   const fetchDayMovements = async () => {
     if (!companyId) return
@@ -68,11 +82,16 @@ export function DayDetailsModal({ date, companyId, onClose }: DayDetailsModalPro
     })
   }
 
-  const handleEditMovement = (movementId: string, type: string) => {
-    // Por ahora, redirigir a la página de movimientos con el ID
-    // TODO: Implementar páginas de edición específicas
-    router.push(`/dashboard/movements?edit=${movementId}&type=${type}`)
-    onClose()
+  const handleEditMovement = (movement: any) => {
+    // Solo permitir editar ventas
+    if (movement.type === "sale") {
+      setEditingMovement(movement)
+    }
+  }
+
+  const handleEditSuccess = () => {
+    fetchDayMovements()
+    setEditingMovement(null)
   }
 
   if (loading) {
@@ -203,15 +222,17 @@ export function DayDetailsModal({ date, companyId, onClose }: DayDetailsModalPro
                           )}
                         </div>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditMovement(movement.id, movement.type)}
-                        className="ml-4"
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Editar
-                      </Button>
+                      {movement.type === "sale" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditMovement(movement)}
+                          className="ml-4"
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Editar
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -220,6 +241,17 @@ export function DayDetailsModal({ date, companyId, onClose }: DayDetailsModalPro
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal de edición de movimiento */}
+      {editingMovement && warehouses.length > 0 && (
+        <EditMovementModal
+          movement={editingMovement}
+          companyId={companyId}
+          warehouses={warehouses}
+          onSuccess={handleEditSuccess}
+          onClose={() => setEditingMovement(null)}
+        />
+      )}
     </div>
   )
 }
