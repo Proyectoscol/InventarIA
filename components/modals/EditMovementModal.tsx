@@ -258,6 +258,83 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
         </CardHeader>
         <CardContent className="p-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {isPurchase ? (
+              // ========== FORMULARIO DE COMPRA ==========
+              <>
+                {/* Producto (solo lectura) */}
+                <div>
+                  <Label>Producto</Label>
+                  <Input
+                    value={selectedProduct?.name || movement.product?.name || ""}
+                    disabled
+                    className="bg-muted"
+                  />
+                </div>
+
+                {/* Bodega (solo lectura) */}
+                <div>
+                  <Label>Bodega</Label>
+                  <Input
+                    value={warehouses.find(w => w.id === movement.warehouseId)?.name || ""}
+                    disabled
+                    className="bg-muted"
+                  />
+                </div>
+
+                {/* Cantidad */}
+                <div>
+                  <Label>Cantidad *</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    {...register("quantity", { valueAsNumber: true })}
+                    placeholder="0"
+                  />
+                  {errors.quantity && (
+                    <p className="text-sm text-red-500 mt-1">{errors.quantity.message}</p>
+                  )}
+                </div>
+
+                {/* Costo Unitario */}
+                <div>
+                  <Label>Costo Unitario (COP) *</Label>
+                  <CurrencyInput
+                    value={watch("unitPrice") || 0}
+                    onChange={(val) => setValue("unitPrice", val, { shouldValidate: true })}
+                    placeholder="10,000"
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Total: <span className="font-semibold">${((watch("unitPrice") || 0) * (watch("quantity") || 0)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} COP</span>
+                  </p>
+                  {errors.unitPrice && (
+                    <p className="text-sm text-red-500 mt-1">{errors.unitPrice.message}</p>
+                  )}
+                </div>
+
+                {/* Información importante */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    <strong>⚠️ Importante:</strong> Al cambiar el costo unitario, se actualizarán automáticamente las ganancias de todas las ventas relacionadas con esta compra.
+                  </p>
+                  <p className="text-sm text-blue-700 mt-2">
+                    Si reduces la cantidad, el sistema validará que no haya ventas que usen más unidades de las disponibles.
+                  </p>
+                </div>
+
+                {/* Botones */}
+                <div className="flex gap-3">
+                  <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={loading} className="flex-1">
+                    {loading ? "Guardando..." : "✅ Guardar Cambios"}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              // ========== FORMULARIO DE VENTA (código existente) ==========
+              <>
             {/* Producto */}
             <div>
               <Label>Producto *</Label>
