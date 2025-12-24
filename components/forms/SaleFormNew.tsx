@@ -331,6 +331,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
           product={selectedProduct}
           warehouseId={selectedWarehouseId}
           warehouseName={warehouses.find(w => w.id === selectedWarehouseId)?.name || ""}
+          companyId={companyId}
           stockQuantity={selectedProduct.stock.find((s: any) => s.warehouse.id === selectedWarehouseId)?.quantity || 0}
           onSave={handleProductSave}
           onCancel={handleProductCardCancel}
