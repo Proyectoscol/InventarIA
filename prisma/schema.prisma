@@ -35,6 +35,7 @@ model Company {
   products    Product[]
   customers   Customer[]
   alertConfig AlertConfig?
+  apiConfig   ApiConfig?
 
   @@map("companies")
 }
