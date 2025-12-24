@@ -397,6 +397,7 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
                     ) : (
                       <Input
                         type="number"
+                        inputMode="numeric"
                         min="1"
                         value={customCreditDays}
                         onChange={(e) => {
