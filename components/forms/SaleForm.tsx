@@ -772,8 +772,8 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         </div>
       )}
 
-      {/* Notas */}
-      {productItems.length > 0 && (
+      {/* Notas - Solo mostrar si hay cliente y productos */}
+      {customerId && productItems.length > 0 && (
         <div>
           <Label>Notas (Opcional)</Label>
           <textarea
@@ -784,8 +784,8 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         </div>
       )}
 
-      {/* Submit */}
-      {productItems.length > 0 && (
+      {/* Submit - Solo mostrar si hay cliente y productos */}
+      {customerId && productItems.length > 0 && (
         <div className="flex gap-3">
           <Button type="button" variant="outline" className="flex-1">
             Cancelar
