@@ -110,15 +110,7 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
   const paymentType = isPurchase ? undefined : (saleForm.watch("paymentType") as "cash" | "credit" | "mixed" | undefined)
   const hasShipping = isPurchase ? false : saleForm.watch("hasShipping")
   
-  // Helper functions to use the correct form's methods
-  const register = isPurchase 
-    ? purchaseForm.register
-    : saleForm.register
-  
-  const handleSubmit = isPurchase
-    ? purchaseForm.handleSubmit
-    : saleForm.handleSubmit
-  
+  // Helper function to use the correct form's setValue
   const setValue = isPurchase 
     ? (field: string, value: any, options?: any) => purchaseForm.setValue(field as any, value, options)
     : (field: string, value: any, options?: any) => saleForm.setValue(field as any, value, options)
@@ -126,9 +118,6 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
   const watch = (field: string) => isPurchase
     ? purchaseForm.watch(field as any)
     : saleForm.watch(field as any)
-  
-  // Get errors from the appropriate form
-  const errors = isPurchase ? purchaseForm.formState.errors : saleForm.formState.errors
 
   // Cargar producto seleccionado
   useEffect(() => {
@@ -305,11 +294,11 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
                     type="number"
                     inputMode="numeric"
                     min="1"
-                    {...register("quantity", { valueAsNumber: true })}
+                    {...purchaseForm.register("quantity", { valueAsNumber: true })}
                     placeholder="0"
                   />
-                  {errors.quantity && (
-                    <p className="text-sm text-red-500 mt-1">{errors.quantity.message}</p>
+                  {purchaseForm.formState.errors.quantity && (
+                    <p className="text-sm text-red-500 mt-1">{purchaseForm.formState.errors.quantity.message}</p>
                   )}
                 </div>
 
@@ -324,8 +313,8 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
                   <p className="text-sm text-muted-foreground mt-1">
                     Total: <span className="font-semibold">${((unitPrice || 0) * (quantity || 0)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} COP</span>
                   </p>
-                  {errors.unitPrice && (
-                    <p className="text-sm text-red-500 mt-1">{errors.unitPrice.message}</p>
+                  {purchaseForm.formState.errors.unitPrice && (
+                    <p className="text-sm text-red-500 mt-1">{purchaseForm.formState.errors.unitPrice.message}</p>
                   )}
                 </div>
 
@@ -363,8 +352,8 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
                   setValue("productId", product.id, { shouldValidate: true })
                 }}
               />
-              {errors.productId && (
-                <p className="text-sm text-red-500">{errors.productId.message}</p>
+              {saleForm.formState.errors.productId && (
+                <p className="text-sm text-red-500">{saleForm.formState.errors.productId.message}</p>
               )}
             </div>
 
@@ -374,12 +363,12 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
               <Input
                 type="number"
                 inputMode="numeric"
-                {...register("quantity", { valueAsNumber: true })}
+                {...saleForm.register("quantity", { valueAsNumber: true })}
                 placeholder="0"
                 min="1"
               />
-              {errors.quantity && (
-                <p className="text-sm text-red-500">{errors.quantity.message}</p>
+              {saleForm.formState.errors.quantity && (
+                <p className="text-sm text-red-500">{saleForm.formState.errors.quantity.message}</p>
               )}
             </div>
 
@@ -435,8 +424,8 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
                   <>Precio unitario: <span className="font-semibold">${(unitPrice || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")} COP</span></>
                 )}
               </p>
-              {errors.unitPrice && (
-                <p className="text-sm text-red-500">{errors.unitPrice.message}</p>
+              {saleForm.formState.errors.unitPrice && (
+                <p className="text-sm text-red-500">{saleForm.formState.errors.unitPrice.message}</p>
               )}
             </div>
 
@@ -575,8 +564,8 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
                         placeholder="Ej: 45"
                       />
                     )}
-                    {errors.creditDays && (
-                      <p className="text-sm text-red-500">{errors.creditDays.message}</p>
+                    {saleForm.formState.errors.creditDays && (
+                      <p className="text-sm text-red-500">{saleForm.formState.errors.creditDays.message}</p>
                     )}
                   </div>
                 </div>
@@ -654,7 +643,7 @@ export function EditMovementModal({ movement, companyId, warehouses, onSuccess, 
             <div>
               <Label>Notas (Opcional)</Label>
               <textarea
-                {...register("notes")}
+                {...saleForm.register("notes")}
                 className="w-full border rounded-md p-2 text-base"
                 rows={3}
               />
