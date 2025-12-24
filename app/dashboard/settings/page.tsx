@@ -53,13 +53,6 @@ export default function SettingsPage() {
       color: "text-green-600"
     },
     {
-      title: "Clientes",
-      description: "Gestiona tu base de clientes",
-      href: "/dashboard/settings/customers",
-      icon: Users,
-      color: "text-purple-600"
-    },
-    {
       title: "Alertas",
       description: "Configura las alertas de email",
       href: "/dashboard/settings/alerts",
