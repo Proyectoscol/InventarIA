@@ -17,7 +17,11 @@ export async function GET(
     const product = await prisma.product.findUnique({
       where: { id: params.id },
       include: {
-        stock: true,
+        stock: {
+          include: {
+            warehouse: true
+          }
+        },
         batches: {
           orderBy: { purchaseDate: "desc" },
           take: 1
