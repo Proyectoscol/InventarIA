@@ -732,8 +732,8 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
         </div>
       )}
 
-      {/* Envío */}
-      {productItems.length > 0 && (
+      {/* Envío - Solo mostrar si hay cliente y productos */}
+      {customerId && productItems.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center space-x-2">
             <Checkbox
