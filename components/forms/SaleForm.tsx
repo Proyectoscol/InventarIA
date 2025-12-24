@@ -686,6 +686,7 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
           <CardContent>
             <CustomerForm
               companyId={companyId}
+              customer={quickCustomerName ? { id: "", name: quickCustomerName, phone: "", address: "" } as any : undefined}
               onSuccess={(newCustomer) => {
                 if (newCustomer) {
                   const updatedCustomers = [...customers, newCustomer]
@@ -693,13 +694,17 @@ export function SaleForm({ companyId, warehouses, customers: initialCustomers = 
                   setValue("customerId", newCustomer.id, { shouldValidate: true })
                   onCustomerCreated?.(newCustomer)
                   setShowCreateCustomer(false)
+                  setQuickCustomerName("") // Limpiar
                   toast.success("✅ Cliente creado y seleccionado", {
                     description: `"${newCustomer.name}" está ahora seleccionado`,
                     duration: 3000
                   })
                 }
               }}
-              onCancel={() => setShowCreateCustomer(false)}
+              onCancel={() => {
+                setShowCreateCustomer(false)
+                setQuickCustomerName("") // Limpiar
+              }}
             />
           </CardContent>
         </Card>
