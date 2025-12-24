@@ -243,7 +243,11 @@ export function QuickProductCreationModal({
             >
               <div>
                 <Label className="text-base">Bodega *</Label>
-                <Select {...productForm.register("warehouseId")} required>
+                <Select 
+                  value={productForm.watch("warehouseId") || ""}
+                  onChange={(e) => productForm.setValue("warehouseId", e.target.value, { shouldValidate: true })}
+                  required
+                >
                   <option value="">Seleccionar...</option>
                   {warehouses.map((w) => (
                     <option key={w.id} value={w.id}>{w.name}</option>
